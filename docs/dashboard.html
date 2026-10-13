@@ -383,6 +383,9 @@
 // Same-origin static asset; can be overridden to an external URL (S3/R2) if needed.
 const PMTILES_URL = 'vacancy_predictions.pmtiles';
 
+// Public basemap for interactive viewing; no API key is needed.
+const BASEMAP_TILES_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
 // ── PMTiles protocol ──────────────────────────────────────────
 const protocol = new pmtiles.Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
@@ -1074,24 +1077,22 @@ p.getHeader().then(() => {
       version: 8,
       glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
       sources: {
-        carto: {
+        basemap: {
           type: 'raster',
-          tiles: ['https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',
-                  'https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png'],
-          tileSize: 256, attribution: '© OpenStreetMap © CARTO'
-        },
-        carto_labels: {
-          type: 'raster',
-          tiles: ['https://a.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png',
-                  'https://b.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png'],
-          tileSize: 256
+          tiles: [BASEMAP_TILES_URL],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
         },
         parcels: {
           type: 'vector',
           url: `pmtiles://${PMTILES_URL}`
         }
       },
-      layers: [{ id: 'carto-base', type: 'raster', source: 'carto' }]
+      layers: [{
+        id: 'basemap', type: 'raster', source: 'basemap',
+        paint: { 'raster-saturation': -1, 'raster-contrast': -0.2 }
+      }]
     },
     center: [-75.145, 39.995],
     zoom: 12,
@@ -1157,8 +1158,6 @@ p.getHeader().then(() => {
         'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0.85, 16, 0.55]
       }
     });
-
-    map.addLayer({ id: 'carto-labels', type: 'raster', source: 'carto_labels' });
 
     applyChoroState();
     updateMapModeBadge();

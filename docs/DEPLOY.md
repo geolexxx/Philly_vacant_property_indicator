@@ -41,7 +41,7 @@ the HTML.
 
 | Feature | Source |
 |---|---|
-| Map basemap | CARTO raster tiles (CDN) |
+| Map basemap | OpenStreetMap standard raster tiles (no API key) |
 | Parcel layer + popups | `vacancy_predictions.pmtiles` (same-origin range requests) |
 | SHAP risk drivers | `dashboard_shap.json` |
 | Ward choropleth | `ward_stats.json` + `ward_boundaries.geojson` |
@@ -53,6 +53,16 @@ the HTML.
 Search is intentionally limited to the flagged subset. The full ~440K-parcel
 index would be too heavy to ship as static JSON; flagged parcels are what a
 user of this tool would realistically search for.
+
+The basemap uses `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, with muted
+colors beneath the data overlays and visible OpenStreetMap attribution. Labels
+are included in the basemap. The former CARTO base and label tiles required an
+API key and displayed a watermark without one. To change providers, update
+`BASEMAP_TILES_URL` and the source attribution in `dashboard.html`.
+Follow the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/):
+keep browser caching and the HTTP Referer enabled, and do not add bulk downloads
+or offline prefetching. Serve the dashboard over HTTP(S), rather than opening it
+as a local `file://` page.
 
 The sidebar is decoupled from PMTiles: if `vacancy_predictions.pmtiles` fails
 to load, the map area shows an inline error but the metrics, ward list, and
