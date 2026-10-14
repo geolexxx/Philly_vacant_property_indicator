@@ -170,6 +170,32 @@
   .popup-atlas-link { display:block; text-align:center; margin-top:10px; padding:7px; background:var(--blue-pale); border-radius:2px; font-size:11px; font-weight:700; font-family:var(--font-head); color:var(--blue-dark); text-decoration:none; border:1px solid var(--blue-light); transition:background .15s; }
   .popup-atlas-link:hover { background:var(--blue-light); }
 
+  /* Embedded Street View */
+  .popup-streetview-btn { display:block; width:100%; margin-top:10px; padding:8px; border:1px solid var(--blue-dark); border-radius:2px; background:var(--blue-dark); color:var(--white); font:700 11px var(--font-head); cursor:pointer; }
+  .popup-streetview-btn:hover { background:var(--blue-mid); }
+  #streetview-panel { width:clamp(340px,36vw,520px); flex-shrink:0; min-height:0; background:var(--white); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  #streetview-panel[hidden], #streetview-frame[hidden], #streetview-message[hidden] { display:none; }
+  #app.streetview-open #view-tabs { top:auto; bottom:60px; width:calc(100% - 28px); max-width:620px; }
+  #app.streetview-open .view-tab { flex:1; padding:8px 6px; font-size:10px; }
+  .streetview-head { padding:16px; background:var(--blue-dark); color:var(--white); border-bottom:3px solid var(--yellow); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .streetview-head h2 { font:700 14px var(--font-head); }
+  #streetview-address { font-size:12px; margin-top:6px; }
+  #streetview-parcel { font-size:10px; color:rgba(255,255,255,.7); margin-top:3px; }
+  .streetview-summary { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; }
+  #streetview-risk { margin:0; }
+  .streetview-viewport { flex:1; min-height:200px; position:relative; background:var(--surface); }
+  #streetview-frame { display:block; width:100%; height:100%; min-height:200px; border:0; position:absolute; inset:0; }
+  #streetview-message { padding:24px 20px; font-size:12px; line-height:1.6; }
+  #streetview-message strong { display:block; font:700 13px var(--font-head); color:var(--blue-dark); margin-bottom:8px; }
+  #streetview-status { padding:8px 16px; font-size:11px; color:var(--blue-dark); background:var(--blue-pale); border-bottom:1px solid var(--blue-light); }
+  .streetview-foot { padding:12px 16px; border-top:1px solid var(--border); font-size:11px; flex-shrink:0; }
+  .streetview-foot p { margin-bottom:8px; line-height:1.5; }
+  .streetview-foot a { font-weight:600; }
+  .popup-streetview-btn:focus-visible, #streetview-close:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
+  @media (max-width:900px) {
+    #streetview-panel { position:fixed; bottom:0; right:0; width:min(100%,520px); height:65vh; height:65dvh; z-index:1100; border-top:1px solid var(--border); box-shadow:0 -6px 24px rgba(0,0,0,.18); }
+  }
+
   /* ABOUT MODAL */
   .modal-overlay { display:none; position:fixed; inset:0; background:rgba(8,32,68,.55); z-index:3000; align-items:center; justify-content:center; padding:24px; }
   .modal-overlay.open { display:flex; }
@@ -335,6 +361,29 @@
       <span id="map-mode-desc2">Zoom &ge; 13 for parcel markers</span>
     </div>
   </div>
+  <section id="streetview-panel" aria-labelledby="streetview-title" hidden>
+    <div class="streetview-head">
+      <div>
+        <h2 id="streetview-title">Street View</h2>
+        <p id="streetview-address"></p>
+        <p id="streetview-parcel"></p>
+      </div>
+      <button class="modal-close" id="streetview-close" aria-label="Close Street View">&times;</button>
+    </div>
+    <div class="streetview-summary">
+      <span class="popup-risk-badge" id="streetview-risk"></span>
+      <span id="streetview-score"></span>
+    </div>
+    <p id="streetview-status" role="status" aria-live="polite"></p>
+    <div class="streetview-viewport">
+      <div id="streetview-message" hidden></div>
+      <iframe id="streetview-frame" title="Google Street View of the selected parcel" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen hidden></iframe>
+    </div>
+    <div class="streetview-foot">
+      <p>Nearby outdoor imagery may show an adjacent property. Check the address and imagery date before assessing vacancy.</p>
+      <a id="streetview-google-link" target="_blank" rel="noopener noreferrer">Open in Google Maps &#8599;</a>
+    </div>
+  </section>
 </div>
 
 <!-- ABOUT MODAL -->
@@ -377,6 +426,7 @@
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
+<script src="streetview-config.js"></script>
 <script>
 'use strict';
 
@@ -447,11 +497,109 @@ function buildPopup(p) {
         <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
         <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
       </div>
+      <button class="popup-streetview-btn" type="button">View Street View</button>
       <a class="popup-atlas-link" href="https://atlas.phila.gov/#/${p.parcel_number}" target="_blank" rel="noopener">
         View on Atlas Phila &#8599;
       </a>
     </div>`;
 }
+
+// ── On-demand embedded Street View ──────────────────────────
+let selectedStreetViewParcel = null;
+let streetViewTrigger = null;
+let streetViewTimer = null;
+const streetViewPanel = document.getElementById('streetview-panel');
+const streetViewFrame = document.getElementById('streetview-frame');
+const streetViewStatus = document.getElementById('streetview-status');
+
+function showParcelPopup(props, location) {
+  selectedStreetViewParcel = { props, lat: Number(location.lat), lng: Number(location.lng) };
+  popup.setLngLat(location).setHTML(buildPopup(props)).addTo(map);
+  if (!streetViewPanel.hidden) renderStreetView();
+}
+
+function renderStreetView() {
+  if (!selectedStreetViewParcel) return;
+  clearTimeout(streetViewTimer);
+  streetViewFrame.onload = null;
+  streetViewFrame.removeAttribute('src');
+  streetViewFrame.hidden = true;
+  const { props, lat, lng } = selectedStreetViewParcel;
+  const address = props.address || 'Address unavailable';
+  document.getElementById('streetview-address').textContent = address;
+  document.getElementById('streetview-parcel').textContent = `Parcel ${props.parcel_number || 'N/A'}`;
+  const risk = riskClass(Number(props.ensemble_prob) || 0);
+  const badge = document.getElementById('streetview-risk');
+  badge.className = `popup-risk-badge ${risk.cls}`;
+  badge.textContent = risk.label;
+  document.getElementById('streetview-score').textContent = `Ensemble: ${((Number(props.ensemble_prob) || 0) * 100).toFixed(1)}%`;
+  const message = document.getElementById('streetview-message');
+  const link = document.getElementById('streetview-google-link');
+  const validLocation = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const mapsUrl = new URL('https://www.google.com/maps/');
+  mapsUrl.searchParams.set('api', '1');
+  if (validLocation) {
+    mapsUrl.searchParams.set('map_action', 'pano');
+    mapsUrl.searchParams.set('viewpoint', `${lat},${lng}`);
+  } else {
+    mapsUrl.pathname = '/maps/search/';
+    mapsUrl.searchParams.set('query', `${address}, Philadelphia, PA`);
+  }
+  link.href = mapsUrl.href;
+  message.hidden = false;
+  if (!validLocation) {
+    streetViewStatus.textContent = 'Location unavailable';
+    message.innerHTML = '<strong>Street View needs a location</strong>Use the Google Maps link below to search for this address.';
+    return;
+  }
+  const apiKey = String(window.PHILLY_CONFIG?.googleMapsEmbedApiKey || '').trim();
+  if (!apiKey) {
+    streetViewStatus.textContent = 'Street View is not configured yet';
+    message.innerHTML = '<strong>Embedded imagery is unavailable</strong>You can still view this location using the Google Maps link below.';
+    return;
+  }
+  message.hidden = true;
+  streetViewStatus.textContent = 'Loading nearby outdoor imagery…';
+  const url = new URL('https://www.google.com/maps/embed/v1/streetview');
+  url.search = new URLSearchParams({ key: apiKey, location: `${lat},${lng}`, radius: '50', source: 'outdoor' }).toString();
+  // Embed is cross-origin: load does not confirm coverage or valid credentials.
+  streetViewFrame.onload = () => {
+    clearTimeout(streetViewTimer);
+    streetViewStatus.textContent = 'If imagery is unavailable, try the Google Maps link below.';
+  };
+  streetViewFrame.title = `Google Street View near ${address}`;
+  streetViewFrame.hidden = false;
+  streetViewFrame.src = url.href;
+  streetViewTimer = setTimeout(() => {
+    streetViewStatus.textContent = 'Taking longer than expected. You can also open this location in Google Maps.';
+  }, 15000);
+}
+
+document.getElementById('map-container').addEventListener('click', event => {
+  const button = event.target.closest('.popup-streetview-btn');
+  if (!button || !selectedStreetViewParcel) return;
+  streetViewTrigger = button;
+  streetViewPanel.hidden = false;
+  document.getElementById('app').classList.add('streetview-open');
+  renderStreetView();
+  if (map) map.resize();
+  document.getElementById('streetview-close').focus();
+});
+
+function closeStreetView() {
+  clearTimeout(streetViewTimer);
+  streetViewFrame.onload = null;
+  streetViewFrame.removeAttribute('src');
+  streetViewPanel.hidden = true;
+  document.getElementById('app').classList.remove('streetview-open');
+  if (map) map.resize();
+  if (streetViewTrigger?.isConnected) streetViewTrigger.focus();
+  else document.getElementById('search-input').focus();
+}
+document.getElementById('streetview-close').addEventListener('click', closeStreetView);
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && !streetViewPanel.hidden) closeStreetView();
+});
 
 // ── Color/opacity ramps for parcel layer ─────────────────────
 const probColor = [
@@ -1015,11 +1163,10 @@ async function doSearch() {
         box.style.display = 'none';
         document.getElementById('search-input').value = pr.parcel_number;
         if (popup) popup.remove();
-        const popupHtml = buildPopup(pr);
         if (!map) return;
         map.flyTo({ center: [pr.lng, pr.lat], zoom: 16 });
         map.once('moveend', () => {
-          popup.setLngLat([pr.lng, pr.lat]).setHTML(popupHtml).addTo(map);
+          showParcelPopup(pr, { lng: pr.lng, lat: pr.lat });
         });
       });
       box.appendChild(div);
@@ -1165,7 +1312,7 @@ p.getHeader().then(() => {
 
     map.on('click', 'parcel-fill', e => {
       const props = e.features[0].properties;
-      popup.setLngLat(e.lngLat).setHTML(buildPopup(props)).addTo(map);
+      showParcelPopup(props, e.lngLat);
     });
     map.on('mouseenter', 'parcel-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'parcel-fill', () => { map.getCanvas().style.cursor = ''; });

@@ -279,3 +279,17 @@ Residential is half the picture. Vacant land is a large issue in Philadelphia an
 There is no inspector feedback loop yet. Field outcomes from inspectors visiting flagged parcels are exactly the data that would close the loop between prediction and ground truth, both validating the model and producing a richer, partially-confirmed label set for the next training run. Building the channel is more an institutional question than a technical one, but it is the highest-value thing the city could do to improve the model's accuracy over time.
 
 In its current scope, the model works. ROC-AUC 0.94, PR-AUC 0.55, calibrated, equitable across income quintiles, and outperforming the existing City VPI at matched flag volume on both precision and recall. It is not a clean swap for the existing VPI, since there are still parcels the VPI catches that the model misses. The right framing is union-or-model rather than model-replaces-VPI, with the choice driven by whether the operational priority is precision per inspector visit or coverage of the vacancy footprint. Once the limitations above are addressed, the case for replacement gets stronger. For now, the right operating posture is the union strategy with the model handling triage.
+
+## Dashboard Street View setup
+
+The parcel popup in `docs/dashboard.html` includes a **View Street View** button. It opens an on-demand Google Street View panel beside the map, or a bottom panel on smaller screens. Selecting another parcel updates the open panel. Close it with the × button or Escape.
+
+To enable embedded imagery:
+
+1. Create a Google Cloud project with billing enabled and enable **Maps Embed API**.
+2. Set `googleMapsEmbedApiKey` in `docs/streetview-config.js` to your browser API key.
+3. Restrict the key to **Maps Embed API** and the HTTP referrers used by your deployed site; include localhost only if needed for development. Browser keys are visible in page source, so restrictions are required.
+
+Maps Embed API is currently free with unlimited requests; see [Google’s setup and pricing documentation](https://developers.google.com/maps/documentation/embed/quickstart). Imagery loads only after the user opens the panel, using outdoor panoramas within 50 meters of the selected location. Coverage and camera orientation vary, and imagery may show a neighboring property. Check the location and image date when reviewing a parcel.
+
+Without a configured key, the panel displays an unavailable state and a working Google Maps Street View link. The embedded viewer displays Google’s own coverage or authentication errors; because it is cross-origin, an iframe load event does not establish successful imagery availability.
