@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vacancy Risk Dashboard — Philly Stat 360</title>
+  <link rel="icon" href="data:,">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
@@ -149,15 +150,20 @@
   .popup-header .address { font-family:var(--font-head); font-size:13px; font-weight:700; color:var(--white); margin-bottom:2px; }
   .popup-header .meta { font-size:11px; color:rgba(255,255,255,.6); }
   .popup-risk-badge { display:inline-block; padding:2px 8px; border-radius:2px; font-family:var(--font-head); font-size:10px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; margin-top:7px; }
-  .badge-very-high { background:#7f0000; color:var(--white); }
-  .badge-high      { background:var(--red); color:var(--white); }
-  .badge-medium    { background:var(--yellow); color:#1a1a1a; }
-  .badge-low       { background:var(--blue-mid); color:var(--white); }
-  .badge-very-low  { background:#d0e8ff; color:var(--blue-dark); }
+  /* One class per qtile_tier; colors match the parcel fill (see TIERS in the script). */
+  .badge-tier-top1   { background:#7f0000; color:var(--white); }
+  .badge-tier-95     { background:var(--red); color:var(--white); }
+  .badge-tier-90     { background:var(--yellow); color:#1a1a1a; }
+  .badge-tier-75     { background:var(--blue-light); color:var(--blue-dark); }
+  .badge-tier-bottom { background:var(--blue-pale); color:var(--blue-dark); box-shadow:inset 0 0 0 1px var(--blue-light); }
+  .badge-tier-none   { background:var(--border); color:var(--body); }
+  .risk-tier-btn { display:flex; align-items:center; gap:6px; text-align:left; }
+  .risk-tier-btn .tier-swatch { display:inline-block; width:10px; height:10px; border-radius:2px; flex-shrink:0; }
   .popup-prob-bar-wrap { margin:8px 0 0; }
   .popup-prob-bar-bg { background:rgba(255,255,255,.2); border-radius:2px; height:6px; position:relative; overflow:hidden; }
   .popup-prob-bar-fill { position:absolute; left:0; top:0; height:100%; border-radius:2px; }
-  .popup-prob-label { display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,.5); margin-top:3px; }
+  .popup-prob-label { display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; font-size:10px; color:rgba(255,255,255,.6); margin-top:3px; }
+  .popup-prob-label b { color:var(--white); }
   .popup-body { padding:10px 14px 12px; }
   .popup-section-label { font-family:var(--font-head); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin:9px 0 5px; padding-bottom:4px; border-bottom:1px solid var(--border); }
   .popup-section-label:first-child { margin-top:0; }
@@ -398,7 +404,10 @@
     </div>
     <div class="modal-scroll">
       <h5>What this shows</h5>
-      <p>An interactive map of predicted vacancy risk scores for residential parcels across Philadelphia. The ward choropleth shows average risk by ward; zoom to level 13+ for individual parcel risk colors.</p>
+      <p>An interactive map of predicted vacancy risk for residential parcels across Philadelphia. The ward choropleth shows average risk by area; zoom to level 13+ for individual parcel colors.</p>
+      <h5>Risk tiers</h5>
+      <p>Every parcel is placed in one of five tiers by ranking the ensemble model's score against all ~436K scored parcels: <strong>Top 1% (highest risk)</strong>, <strong>95&ndash;99%</strong>, <strong>90&ndash;95%</strong>, <strong>75&ndash;90%</strong> and <strong>Bottom 75% (lowest risk)</strong>. The ranges are percentiles of that score. These tiers set the parcel colors, the legend, the risk filter and the badge in the parcel popup and Street View panel. Flagged parcels fall in the Top 1% and 95&ndash;99% tiers.</p>
+      <p>The popup also shows a <strong>calibrated probability</strong> as secondary information. Vacancy is rare, so a Top 1% parcel can still have a calibrated probability below 40%; read the tier as relative rank, not as a chance. Values of 99% or more are shown as &ge;99%.</p>
       <h5>Model performance</h5>
       <div class="metric-row">
         <div class="metric-chip">AUC <strong>0.940</strong></div>
@@ -446,7 +455,7 @@ protocol.add(p);
 let map = null;
 let activeWard  = null;
 let activeTract = null;
-let activeRisk  = null;
+let activeRisk  = new Set(); // selected qtile_tier keys; empty = all tiers
 let mapView     = 'risk'; // 'risk' | 'observed' | 'underreported'
 let wardChart   = null;
 let allWardStats = {};
@@ -457,48 +466,70 @@ let wardGeoPromise = null;
 let flaggedDataPromise = null;
 let popup = new maplibregl.Popup({ closeButton: true, maxWidth: '310px' });
 
-// ── Popup helpers ─────────────────────────────────────────────
-function riskClass(prob) {
-  if (prob >= 0.8) return { label: 'Very High Risk', cls: 'badge-very-high' };
-  if (prob >= 0.6) return { label: 'High Risk',      cls: 'badge-high' };
-  if (prob >= 0.4) return { label: 'Medium Risk',    cls: 'badge-medium' };
-  if (prob >= 0.2) return { label: 'Low Risk',       cls: 'badge-low' };
-  return               { label: 'Very Low Risk',  cls: 'badge-very-low' };
+// ── Risk tiers: the single tier vocabulary (qtile_tier) ───────
+// Keys are the exact qtile_tier strings in vacancy_predictions.pmtiles (en dashes).
+// Order is highest risk first. Colors drive the parcel fill, legend, filter and badges.
+const TIERS = [
+  { key: 'Top 1% (highest risk)',    sub: 'Highest-scoring 1% of parcels', color: '#7f0000', opacity: 0.9,  cls: 'badge-tier-top1' },
+  { key: '95–99%',                   sub: '95th–99th percentile',          color: '#cc3000', opacity: 0.8,  cls: 'badge-tier-95' },
+  { key: '90–95%',                   sub: '90th–95th percentile',          color: '#f3c613', opacity: 0.7,  cls: 'badge-tier-90' },
+  { key: '75–90%',                   sub: '75th–90th percentile',          color: '#96c9ff', opacity: 0.5,  cls: 'badge-tier-75' },
+  { key: 'Bottom 75% (lowest risk)', sub: 'Below the 75th percentile',     color: '#daedfe', opacity: 0.15, cls: 'badge-tier-bottom', border: '#96c9ff' }
+];
+const TIER_BY_KEY = Object.fromEntries(TIERS.map(t => [t.key, t]));
+const UNKNOWN_TIER = { key: null, sub: 'No tier in the data', color: '#cccccc', opacity: 0.15, cls: 'badge-tier-none' };
+// Tiers present among ensemble_flag==1 && ovs==0 parcels (958 Top 1%, 17 at 95–99%).
+// Recheck if the PMTiles data is regenerated.
+const UNDERREPORTED_TIERS = ['Top 1% (highest risk)', '95–99%'];
+
+function tierInfo(qtileTier) {
+  const t = TIER_BY_KEY[qtileTier];
+  return t ? { ...t, label: t.key } : { ...UNKNOWN_TIER, label: 'Tier unavailable' };
 }
 
+// Calibrated probability as secondary text: "≥99%" at 0.99 and above, one decimal otherwise.
+function formatProb(prob) {
+  const v = Number(prob);
+  if (!Number.isFinite(v)) return 'N/A';
+  if (v >= 0.99) return '≥99%';
+  return `${(v * 100).toFixed(1)}%`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// ── Popup helpers ─────────────────────────────────────────────
 function buildPopup(p) {
-  const prob = p.ensemble_prob || 0;
-  const pct  = (prob * 100).toFixed(1);
-  const { label, cls } = riskClass(prob);
-  const barColor = prob >= 0.6 ? '#cc3000' : prob >= 0.4 ? '#c87800' : '#2176d2';
+  const prob = Number(p.ensemble_prob);
+  const barWidth = Number.isFinite(prob) ? Math.min(Math.max(prob, 0), 1) * 100 : 0;
+  const tier = tierInfo(p.qtile_tier);
+  const atlasUrl = `https://atlas.phila.gov/#/${encodeURIComponent(p.parcel_number ?? '')}`;
   return `
     <div class="popup-header">
-      <div class="address">${p.address || 'Address unavailable'}</div>
-      <div class="meta">Parcel ${p.parcel_number || 'N/A'} &middot; ZIP ${p.zip_code||'N/A'} &middot; Tract ${p.census_tract||'N/A'} &middot; Ward ${p.geographic_ward||'N/A'}</div>
-      <span class="popup-risk-badge ${cls}">${label}</span>
+      <div class="address">${escapeHtml(p.address || 'Address unavailable')}</div>
+      <div class="meta">Parcel ${escapeHtml(p.parcel_number || 'N/A')} &middot; ZIP ${escapeHtml(p.zip_code || 'N/A')} &middot; Tract ${escapeHtml(p.census_tract || 'N/A')} &middot; Ward ${escapeHtml(p.geographic_ward || 'N/A')}</div>
+      <span class="popup-risk-badge ${tier.cls}" title="Risk tier: ${escapeHtml(tier.sub)}">${escapeHtml(tier.label)}</span>
       <div class="popup-prob-bar-wrap">
         <div class="popup-prob-bar-bg">
-          <div class="popup-prob-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div>
+          <div class="popup-prob-bar-fill" style="width:${barWidth}%;background:rgba(255,255,255,.85);"></div>
         </div>
         <div class="popup-prob-label">
-          <span>Ensemble: <b>${pct}%</b></span>
-          <span>${p.qtile_tier||''}</span>
+          <span>Calibrated probability: <b>${formatProb(p.ensemble_prob)}</b></span>
+          <span>${escapeHtml(tier.sub)}</span>
         </div>
       </div>
     </div>
     <div class="popup-body">
-      <div class="popup-section-label">Model Probabilities</div>
-      <div class="life-history-grid">
-        <div class="lh-item"><span class="lh-val">${((p.ensemble_prob||0)*100).toFixed(2)}%</span><span class="lh-lbl">Ensemble</span></div>
-        <div class="lh-item"><span class="lh-val">${p.risk_score||0}</span><span class="lh-lbl">Risk Score</span></div>
-      </div>
       <div class="popup-section-label">Model Flags</div>
       <div class="ovs-indicators">
         <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
         <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
       </div>
       <button class="popup-streetview-btn" type="button">View Street View</button>
-      <a class="popup-atlas-link" href="https://atlas.phila.gov/#/${p.parcel_number}" target="_blank" rel="noopener">
+      <a class="popup-atlas-link" href="${escapeHtml(atlasUrl)}" target="_blank" rel="noopener">
         View on Atlas Phila &#8599;
       </a>
     </div>`;
@@ -528,11 +559,12 @@ function renderStreetView() {
   const address = props.address || 'Address unavailable';
   document.getElementById('streetview-address').textContent = address;
   document.getElementById('streetview-parcel').textContent = `Parcel ${props.parcel_number || 'N/A'}`;
-  const risk = riskClass(Number(props.ensemble_prob) || 0);
+  const tier = tierInfo(props.qtile_tier);
   const badge = document.getElementById('streetview-risk');
-  badge.className = `popup-risk-badge ${risk.cls}`;
-  badge.textContent = risk.label;
-  document.getElementById('streetview-score').textContent = `Ensemble: ${((Number(props.ensemble_prob) || 0) * 100).toFixed(1)}%`;
+  badge.className = `popup-risk-badge ${tier.cls}`;
+  badge.textContent = tier.label;
+  badge.title = `Risk tier: ${tier.sub}`;
+  document.getElementById('streetview-score').textContent = `Calibrated probability: ${formatProb(props.ensemble_prob)}`;
   const message = document.getElementById('streetview-message');
   const link = document.getElementById('streetview-google-link');
   const validLocation = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
@@ -601,18 +633,16 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !streetViewPanel.hidden) closeStreetView();
 });
 
-// ── Color/opacity ramps for parcel layer ─────────────────────
-const probColor = [
-  'interpolate', ['linear'], ['get', 'ensemble_prob'],
-  0,   '#daedfe',
-  0.2, '#96c9ff',
-  0.4, '#f3c613',
-  0.6, '#cc3000',
-  0.8, '#7f0000'
+// ── Color/opacity for parcel layer, keyed by qtile_tier ──────
+const tierColor = [
+  'match', ['get', 'qtile_tier'],
+  ...TIERS.flatMap(t => [t.key, t.color]),
+  UNKNOWN_TIER.color
 ];
-const probOpacity = [
-  'interpolate', ['linear'], ['get', 'ensemble_prob'],
-  0, 0.15, 0.2, 0.5, 0.4, 0.7, 0.8, 0.9
+const tierOpacity = [
+  'match', ['get', 'qtile_tier'],
+  ...TIERS.flatMap(t => [t.key, t.opacity]),
+  UNKNOWN_TIER.opacity
 ];
 
 // "Predicted vs Observed" — confusion-matrix coloring
@@ -635,8 +665,8 @@ const observedOpacity = [
 
 function getParcelPaint(view) {
   if (view === 'observed') return { color: observedColor, opacity: observedOpacity };
-  // 'risk' and 'underreported' both use the probability ramp
-  return { color: probColor, opacity: probOpacity };
+  // 'risk' and 'underreported' both use the qtile_tier colors
+  return { color: tierColor, opacity: tierOpacity };
 }
 
 // ── Ward choropleth color (view-aware) ────────────────────────
@@ -661,16 +691,15 @@ function choroColor(stat, view) {
 }
 
 // ── Legend rendering ──────────────────────────────────────────
+function tierLegendItem(t) {
+  return { sw: t.color, label: t.key, sub: t.sub, border: t.border };
+}
+
 const LEGENDS = {
   risk: {
     title: 'Risk Tiers',
-    items: [
-      { sw: '#7f0000', label: 'Very High Risk', sub: 'Ensemble prob ≥ 80%' },
-      { sw: '#cc3000', label: 'High Risk',      sub: 'Ensemble prob 60–80%' },
-      { sw: '#f3c613', label: 'Medium Risk',    sub: 'Ensemble prob 40–60%' },
-      { sw: '#96c9ff', label: 'Low Risk',       sub: 'Ensemble prob 20–40%' },
-      { sw: '#daedfe', label: 'Very Low Risk',  sub: 'Ensemble prob < 20%', border: '#96c9ff' }
-    ],
+    items: TIERS.map(tierLegendItem),
+    note: 'Tiers rank every scored parcel by model score (percentiles). Click a parcel for its calibrated probability.',
     choroMetric: 'mean predicted prob'
   },
   observed: {
@@ -685,12 +714,8 @@ const LEGENDS = {
   },
   underreported: {
     title: 'Underreported Vacancy',
-    items: [
-      { sw: '#7f0000', label: 'Very High Risk', sub: 'Ensemble prob ≥ 80%' },
-      { sw: '#cc3000', label: 'High Risk',      sub: 'Ensemble prob 60–80%' },
-      { sw: '#f3c613', label: 'Medium Risk',    sub: 'Ensemble prob 40–60%' }
-    ],
-    note: 'Showing only flagged parcels with no city vacancy signal (ovs = 0).',
+    items: UNDERREPORTED_TIERS.map(k => tierLegendItem(TIER_BY_KEY[k])),
+    note: 'Showing only flagged parcels with no city vacancy signal (ovs = 0). Flagged parcels fall in these two tiers only.',
     choroMetric: 'underreported rate'
   },
   heatmap: {
@@ -936,34 +961,47 @@ async function selectWard(ward, btn) {
 }
 
 // ── Risk Level filter ─────────────────────────────────────────
+// One toggle per qtile_tier; any combination can be selected. None selected = all tiers.
 function buildRiskButtons() {
   const container = document.getElementById('risk-list');
   container.innerHTML = '';
-  const btn = document.createElement('button');
-  btn.className = 'wd-btn';
-  btn.dataset.tier = 'Top 1% (highest risk)';
-  btn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;background:#7f0000;border-radius:2px;margin-right:6px;"></span>Top 1% (highest risk)';
-  container.appendChild(btn);
+  TIERS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'wd-btn risk-tier-btn';
+    btn.dataset.tier = t.key;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.title = t.sub;
+    const sw = document.createElement('span');
+    sw.className = 'tier-swatch';
+    sw.style.background = t.color;
+    if (t.border) sw.style.boxShadow = `inset 0 0 0 1px ${t.border}`;
+    btn.append(sw, document.createTextNode(t.key));
+    container.appendChild(btn);
+  });
 }
 
-document.addEventListener('click', e => {
+function syncRiskButtons() {
+  document.querySelectorAll('#risk-list [data-tier]').forEach(b => {
+    const on = activeRisk.has(b.dataset.tier);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+}
+
+document.getElementById('risk-list').addEventListener('click', e => {
   const btn = e.target.closest('[data-tier]');
   if (!btn) return;
   const tier = btn.dataset.tier;
-  if (activeRisk === tier) {
-    activeRisk = null;
-    document.querySelectorAll('[data-tier]').forEach(b => b.classList.remove('active'));
-  } else {
-    activeRisk = tier;
-    document.querySelectorAll('[data-tier]').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
+  if (activeRisk.has(tier)) activeRisk.delete(tier);
+  else activeRisk.add(tier);
+  syncRiskButtons();
   updateFilter();
 });
 
 document.getElementById('risk-clear').addEventListener('click', () => {
-  activeRisk = null;
-  document.querySelectorAll('[data-tier]').forEach(b => b.classList.remove('active'));
+  activeRisk.clear();
+  syncRiskButtons();
   updateFilter();
 });
 
@@ -1026,7 +1064,7 @@ function updateFilter() {
   const parts = [];
   if (activeWard)  parts.push(['==', ['to-string', ['get', 'geographic_ward']], activeWard]);
   if (activeTract) parts.push(['==', ['to-string', ['get', 'census_tract']], activeTract]);
-  if (activeRisk)  parts.push(['==', ['get', 'qtile_tier'], activeRisk]);
+  if (activeRisk.size) parts.push(['in', ['get', 'qtile_tier'], ['literal', [...activeRisk]]]);
   parts.push(...viewFilterParts(mapView));
 
   let mapFilter = null;
@@ -1157,8 +1195,8 @@ async function doSearch() {
       const div = document.createElement('div');
       div.className = 'sri';
       div.innerHTML = `
-        <div class="sri-parcel">${pr.parcel_number} <span style="color:var(--muted);font-weight:400;font-size:11px">${pr.address||''}</span></div>
-        <div class="sri-meta">${pr.qtile_tier||''} · Ward ${pr.geographic_ward||'N/A'} · ZIP ${pr.zip_code||'N/A'}</div>`;
+        <div class="sri-parcel">${escapeHtml(pr.parcel_number)} <span style="color:var(--muted);font-weight:400;font-size:11px">${escapeHtml(pr.address || '')}</span></div>
+        <div class="sri-meta">${escapeHtml(tierInfo(pr.qtile_tier).label)} · Ward ${escapeHtml(pr.geographic_ward || 'N/A')} · ZIP ${escapeHtml(pr.zip_code || 'N/A')}</div>`;
       div.addEventListener('click', () => {
         box.style.display = 'none';
         document.getElementById('search-input').value = pr.parcel_number;
@@ -1273,15 +1311,15 @@ p.getHeader().then(() => {
       source: 'parcels', 'source-layer': 'parcels',
       minzoom: 12,
       paint: {
-        'fill-color': probColor,
-        'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0, 13, probOpacity]
+        'fill-color': tierColor,
+        'fill-opacity': ['interpolate', ['linear'], ['zoom'], 12, 0, 13, tierOpacity]
       }
     });
     map.addLayer({
       id: 'parcel-line', type: 'line',
       source: 'parcels', 'source-layer': 'parcels',
       minzoom: 13,
-      paint: { 'line-color': probColor, 'line-width': 0.5, 'line-opacity': 0.5 }
+      paint: { 'line-color': tierColor, 'line-width': 0.5, 'line-opacity': 0.5 }
     });
 
     // Heatmap source + layer (data attached lazily on first switch into the heatmap view).
