@@ -145,7 +145,8 @@
   .sri-meta { font-size:10px; color:var(--muted); margin-top:1px; }
 
   /* MAPLIBRE POPUP */
-  .maplibregl-popup-content { padding:0 !important; border-radius:3px !important; overflow:hidden; min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
+  /* Height cap keeps the popup (with risk drivers) clear of the search bar; the rest scrolls. */
+  .maplibregl-popup-content { padding:0 !important; border-radius:3px !important; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; max-height:calc(50vh - 92px); min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
   .popup-header { background:var(--blue-dark); padding:12px 14px 10px; border-bottom:3px solid var(--yellow); }
   .popup-header .address { font-family:var(--font-head); font-size:13px; font-weight:700; color:var(--white); margin-bottom:2px; }
   .popup-header .meta { font-size:11px; color:rgba(255,255,255,.6); }
@@ -165,6 +166,8 @@
   .popup-prob-label { display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 10px; font-size:10px; color:rgba(255,255,255,.6); margin-top:3px; }
   .popup-prob-label b { color:var(--white); }
   .popup-body { padding:10px 14px 12px; }
+  /* Fade pinned to the bottom of the scrolling popup: shows there is more below, sits on blank space at the end. */
+  .popup-body::after { content:''; display:block; position:sticky; bottom:0; height:22px; margin:0 -14px -12px; background:linear-gradient(rgba(255,255,255,0), var(--white) 85%); pointer-events:none; }
   .popup-section-label { font-family:var(--font-head); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin:9px 0 5px; padding-bottom:4px; border-bottom:1px solid var(--border); }
   .popup-section-label:first-child { margin-top:0; }
   .life-history-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; }
@@ -175,6 +178,26 @@
   .ovs-item { font-size:11px; color:var(--body); }
   .popup-atlas-link { display:block; text-align:center; margin-top:10px; padding:7px; background:var(--blue-pale); border-radius:2px; font-size:11px; font-weight:700; font-family:var(--font-head); color:var(--blue-dark); text-decoration:none; border:1px solid var(--blue-light); transition:background .15s; }
   .popup-atlas-link:hover { background:var(--blue-light); }
+
+  /* "Why this parcel": SHAP risk drivers (filled after dashboard_shap.json loads) */
+  .shap-section-label { margin-top:14px; }
+  .shap-list { list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .shap-row { display:flex; flex-direction:column; gap:1px; }
+  .shap-row-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:11px; line-height:1.35; }
+  .shap-label { color:var(--body); overflow-wrap:anywhere; min-width:0; }
+  .shap-value { font-weight:600; color:var(--blue-dark); white-space:nowrap; flex-shrink:0; }
+  .shap-row-bottom { display:flex; align-items:center; gap:8px; }
+  .shap-bar-track { flex:1; min-width:40px; height:6px; background:var(--surface); border-radius:2px; overflow:hidden; }
+  .shap-bar-fill { height:100%; border-radius:2px; }
+  .shap-up .shap-bar-fill { background:var(--red); }
+  .shap-down .shap-bar-fill { background:var(--blue-mid); }
+  .shap-dir { font-size:10px; font-weight:600; line-height:1.3; white-space:nowrap; width:76px; flex-shrink:0; }
+  .shap-up .shap-dir { color:#a32600; }
+  .shap-down .shap-dir { color:var(--blue-dark); }
+  .shap-note, .shap-caption { font-size:10px; color:#6b6b6b; line-height:1.45; }
+  .shap-caption { margin-top:7px; }
+  .about-drivers { margin:4px 0 8px; padding-left:20px; }
+  .about-drivers li { margin-bottom:2px; }
 
   /* Embedded Street View */
   .popup-streetview-btn { display:block; width:100%; margin-top:10px; padding:8px; border:1px solid var(--blue-dark); border-radius:2px; background:var(--blue-dark); color:var(--white); font:700 11px var(--font-head); cursor:pointer; }
@@ -408,6 +431,10 @@
       <h5>Risk tiers</h5>
       <p>Every parcel is placed in one of five tiers by ranking the ensemble model's score against all ~436K scored parcels: <strong>Top 1% (highest risk)</strong>, <strong>95&ndash;99%</strong>, <strong>90&ndash;95%</strong>, <strong>75&ndash;90%</strong> and <strong>Bottom 75% (lowest risk)</strong>. The ranges are percentiles of that score. These tiers set the parcel colors, the legend, the risk filter and the badge in the parcel popup and Street View panel. Flagged parcels fall in the Top 1% and 95&ndash;99% tiers.</p>
       <p>The popup also shows a <strong>calibrated probability</strong> as secondary information. Vacancy is rare, so a Top 1% parcel can still have a calibrated probability below 40%; read the tier as relative rank, not as a chance. Values of 99% or more are shown as &ge;99%.</p>
+      <h5>Why this parcel (risk drivers)</h5>
+      <p>For 200 of the highest-scoring parcels, the popup lists the five features that moved that parcel's score the most, with the parcel's own value and whether each one raised or lowered risk. The bars compare each driver with the parcel's strongest one. These drivers come from TreeSHAP on the <strong>random-forest component</strong> of the model, not the full ensemble. Violation and Clean &amp; Seal counts and day spans are measured up to the model's data cutoff of 1&nbsp;October&nbsp;2025.</p>
+      <p>Strongest drivers across those 200 parcels (mean absolute SHAP):</p>
+      <ol class="about-drivers" id="about-shap-global"><li>Loading&hellip;</li></ol>
       <h5>Model performance</h5>
       <div class="metric-row">
         <div class="metric-chip">AUC <strong>0.940</strong></div>
@@ -464,6 +491,7 @@ let tractIndex = {};
 let wardStatsPromise = null;
 let wardGeoPromise = null;
 let flaggedDataPromise = null;
+let shapDataPromise = null;
 let popup = new maplibregl.Popup({ closeButton: true, maxWidth: '310px' });
 
 // ── Risk tiers: the single tier vocabulary (qtile_tier) ───────
@@ -501,6 +529,81 @@ function escapeHtml(value) {
   ));
 }
 
+// ── SHAP risk drivers ("Why this parcel") ─────────────────────
+// Definitions follow code/r_code/03_3_Features.Rmd. Violation and Clean & Seal
+// features are measured up to TRAIN_CUTOFF (2025-10-01), and violation features
+// exclude the 11 OVS-defining codes. "Observed vacant" is the city signal (ovs);
+// the ZIP/tract features leave the parcel itself out.
+const NO_RECORD_DAYS = 9405; // TRAIN_CUTOFF − 2000-01-01, the fill value when there is no record
+const fmtInt = v => Math.round(v).toLocaleString('en-US');
+const fmtDays = v => v === NO_RECORD_DAYS ? 'None on record' : `${fmtInt(v)} ${Math.round(v) === 1 ? 'day' : 'days'}`;
+const fmtPct = digits => v => `${(v * 100).toFixed(digits)}%`;
+const FEATURE_LABELS = {
+  days_since_last_cs:   { label: 'Days since last Clean & Seal case',      format: fmtDays },
+  n_cs_total:           { label: 'Clean & Seal work orders on record',     format: fmtInt },
+  n_violations_5yr:     { label: 'L&I violations, last 5 years',           format: fmtInt },
+  n_violations_3yr:     { label: 'L&I violations, last 3 years',           format: fmtInt },
+  days_since_last_viol: { label: 'Days since last L&I violation',          format: fmtDays },
+  resolution_rate:      { label: 'Share of L&I violations resolved',       format: fmtPct(0) },
+  nbr_n_vacant_zip:     { label: 'Other observed-vacant parcels in ZIP',   format: fmtInt },
+  nbr_n_vacant_tract:   { label: 'Other observed-vacant parcels in tract', format: fmtInt },
+  nbr_ovs_rate_zip:     { label: 'Observed-vacant rate, rest of ZIP',      format: fmtPct(2) },
+  nbr_ovs_rate_tract:   { label: 'Observed-vacant rate, rest of tract',    format: fmtPct(2) },
+  exterior_condition:   { label: 'Exterior condition (OPA, 7 = worst)',    format: fmtInt },
+  // log_livable_area = log1p(total_livable_area), so expm1 recovers square feet.
+  log_livable_area:     { label: 'Livable floor area',                     format: v => `${fmtInt(Math.expm1(v))} sq ft` },
+  building_age:         { label: 'Building age (as of 2024)',              format: v => `${fmtInt(v)} years` }
+};
+
+function featureLabel(feature) {
+  return FEATURE_LABELS[feature]?.label || String(feature ?? 'Unknown feature');
+}
+
+function formatFeatureValue(feature, value) {
+  const v = Number(value);
+  if (value == null || !Number.isFinite(v)) return 'N/A';
+  const fmt = FEATURE_LABELS[feature]?.format;
+  if (fmt) return fmt(v);
+  return Number.isInteger(v) ? fmtInt(v) : v.toLocaleString('en-US', { maximumSignificantDigits: 3 });
+}
+
+// PMTiles parcel_number and the JSON keys are both strings. The SHAP export dropped
+// the leading zero of 28 ward 01–09 parcels ("73129000"); the current tiles have no
+// 0-prefixed parcels, so those 28 never match today. Parcel numbers are fixed-width,
+// so comparing without leading zeros is safe and keeps them matching if tiles add them.
+function parcelKey(value) {
+  return String(value ?? '').trim().replace(/^0+(?=\d)/, '');
+}
+
+const SHAP_NOT_EXPLAINED = 'Driver explanations are available only for 200 of the highest-scoring parcels.';
+
+function shapDriversHtml(drivers) {
+  if (!Array.isArray(drivers) || !drivers.length) {
+    return `<p class="shap-note">${escapeHtml(SHAP_NOT_EXPLAINED)}</p>`;
+  }
+  const rows = drivers
+    .map(d => ({ ...d, shap: Number(d.shap) }))
+    .sort((a, b) => (Math.abs(b.shap) || 0) - (Math.abs(a.shap) || 0));
+  const maxAbs = Math.max(0, ...rows.map(d => Math.abs(d.shap) || 0));
+  const items = rows.map(d => {
+    const up = Number.isFinite(d.shap) ? d.shap > 0 : d.direction === 'pushed up';
+    const pct = maxAbs > 0 && Number.isFinite(d.shap) ? (Math.abs(d.shap) / maxAbs) * 100 : 0;
+    return `
+      <li class="shap-row ${up ? 'shap-up' : 'shap-down'}">
+        <div class="shap-row-top">
+          <span class="shap-label">${escapeHtml(featureLabel(d.feature))}</span>
+          <span class="shap-value">${escapeHtml(formatFeatureValue(d.feature, d.value))}</span>
+        </div>
+        <div class="shap-row-bottom">
+          <div class="shap-bar-track" aria-hidden="true"><div class="shap-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
+          <span class="shap-dir"><span aria-hidden="true">${up ? '▲' : '▼'}</span> ${up ? 'Raises risk' : 'Lowers risk'}</span>
+        </div>
+      </li>`;
+  });
+  return `<ol class="shap-list">${items.join('')}</ol>
+    <p class="shap-caption">Drivers from the random-forest component (TreeSHAP). Violation and Clean &amp; Seal history is as of 1&nbsp;Oct&nbsp;2025.</p>`;
+}
+
 // ── Popup helpers ─────────────────────────────────────────────
 function buildPopup(p) {
   const prob = Number(p.ensemble_prob);
@@ -532,6 +635,11 @@ function buildPopup(p) {
       <a class="popup-atlas-link" href="${escapeHtml(atlasUrl)}" target="_blank" rel="noopener">
         View on Atlas Phila &#8599;
       </a>
+      <!-- Below the actions so the async fill never shifts the buttons. -->
+      <div class="popup-section-label shap-section-label">Why this parcel</div>
+      <div class="popup-shap" data-parcel="${escapeHtml(parcelKey(p.parcel_number))}">
+        <p class="shap-note">Loading risk drivers&hellip;</p>
+      </div>
     </div>`;
 }
 
@@ -546,7 +654,30 @@ const streetViewStatus = document.getElementById('streetview-status');
 function showParcelPopup(props, location) {
   selectedStreetViewParcel = { props, lat: Number(location.lat), lng: Number(location.lng) };
   popup.setLngLat(location).setHTML(buildPopup(props)).addTo(map);
+  fillShapDrivers(props.parcel_number);
   if (!streetViewPanel.hidden) renderStreetView();
+}
+
+// The popup renders at once; drivers fill in when dashboard_shap.json resolves.
+// A newer popup bumps shapPopupSeq, so a late result never lands in the wrong parcel.
+let shapPopupSeq = 0;
+function fillShapDrivers(parcelNumber) {
+  const seq = ++shapPopupSeq;
+  const key = parcelKey(parcelNumber);
+  const write = html => {
+    if (seq !== shapPopupSeq || !popup.isOpen()) return;
+    const el = popup.getElement()?.querySelector('.popup-shap');
+    if (!el || el.dataset.parcel !== key) return;
+    el.innerHTML = html;
+    popup.setLngLat(popup.getLngLat()); // re-run anchor placement for the taller content
+  };
+  getShapData().then(
+    data => write(shapDriversHtml(data.byParcel.get(key))),
+    err => {
+      console.warn('Risk drivers failed to load:', err);
+      write('<p class="shap-note">Risk drivers could not be loaded.</p>');
+    }
+  );
 }
 
 function renderStreetView() {
@@ -815,6 +946,29 @@ function getFlaggedData() {
     });
   }
   return flaggedDataPromise;
+}
+
+// Fetched lazily on the first popup (or About) open; a failed fetch can be retried.
+function getShapData() {
+  if (!shapDataPromise) {
+    shapDataPromise = fetch('dashboard_shap.json')
+      .then(r => {
+        if (!r.ok) throw new Error(`dashboard_shap.json: HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(json => {
+        const byParcel = new Map();
+        Object.entries(json.shap_by_parcel || {}).forEach(([k, drivers]) => {
+          if (Array.isArray(drivers)) byParcel.set(parcelKey(k), drivers);
+        });
+        return { byParcel, global: Array.isArray(json.global_shap) ? json.global_shap : [] };
+      })
+      .catch(err => {
+        shapDataPromise = null;
+        throw err;
+      });
+  }
+  return shapDataPromise;
 }
 
 // ── Choropleth aggregation levels ─────────────────────────────
@@ -1404,7 +1558,26 @@ function renderWardChart(top10) {
 // ── About modal ───────────────────────────────────────────────
 document.getElementById('about-btn').addEventListener('click', () => {
   document.getElementById('aboutModal').classList.add('open');
+  fillAboutDrivers();
 });
+
+// global_shap is mean |SHAP| over the same 200 explained parcels, not the whole city.
+function fillAboutDrivers() {
+  const list = document.getElementById('about-shap-global');
+  if (list.dataset.filled) return;
+  getShapData().then(data => {
+    const top = data.global
+      .filter(g => Number.isFinite(Number(g.mean_abs_shap)))
+      .sort((a, b) => Number(b.mean_abs_shap) - Number(a.mean_abs_shap))
+      .slice(0, 5);
+    list.innerHTML = top.length
+      ? top.map(g => `<li>${escapeHtml(featureLabel(g.feature))}</li>`).join('')
+      : '<li>No summary available.</li>';
+    list.dataset.filled = '1';
+  }, () => {
+    list.innerHTML = '<li>Driver summary could not be loaded.</li>';
+  });
+}
 document.getElementById('modal-close-btn').addEventListener('click', () => {
   document.getElementById('aboutModal').classList.remove('open');
 });
