@@ -30,6 +30,7 @@
     --white:       #fff;
     --font-head:   'Montserrat', sans-serif;
     --font-body:   'Open Sans', sans-serif;
+    --header-h:    56px;
   }
 
   html, body { height:100%; font-family:var(--font-body); font-size:14px; line-height:1.5; color:var(--body); background:var(--surface); -webkit-font-smoothing:antialiased; overflow:hidden; }
@@ -37,21 +38,28 @@
   a:hover { color:var(--blue-dark); }
 
   /* HEADER */
-  #header { background:var(--blue-dark); color:var(--white); height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 20px 0 16px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.32); z-index:1000; position:relative; }
-  .header-brand { display:flex; align-items:center; gap:14px; text-decoration:none; }
+  #header { background:var(--blue-dark); color:var(--white); height:var(--header-h); display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 20px 0 16px; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,.32); z-index:1000; position:relative; }
+  .header-brand { display:flex; align-items:center; gap:14px; text-decoration:none; min-width:0; }
   .header-brand::before { content:''; display:block; width:3px; height:32px; background:var(--yellow); border-radius:2px; flex-shrink:0; }
-  .header-brand-label { font-family:var(--font-head); font-weight:700; font-size:14px; color:var(--white); letter-spacing:-0.1px; line-height:1.2; }
-  .header-brand-label span { display:block; font-size:10px; font-weight:600; color:rgba(255,255,255,.6); letter-spacing:0.4px; text-transform:uppercase; margin-top:1px; }
-  .header-right { display:flex; align-items:center; gap:10px; }
-  .badge-experimental { background:var(--yellow); color:#1a1a1a; font-family:var(--font-head); font-size:10px; font-weight:700; padding:3px 9px; border-radius:2px; letter-spacing:0.5px; text-transform:uppercase; }
-  #about-btn { font-family:var(--font-body); font-size:12px; font-weight:600; background:transparent; border:1.5px solid rgba(255,255,255,.5); color:var(--white); border-radius:2px; padding:5px 14px; cursor:pointer; text-transform:uppercase; letter-spacing:0.4px; transition:background .15s,border-color .15s; }
+  .header-logo { height:36px; width:auto; object-fit:contain; flex-shrink:0; }
+  .header-brand-label { font-family:var(--font-head); font-weight:700; font-size:14px; color:var(--white); letter-spacing:-0.1px; line-height:1.2; min-width:0; }
+  .header-brand-label > span { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .header-brand-label .brand-sub { font-size:10px; font-weight:600; color:rgba(255,255,255,.6); letter-spacing:0.4px; text-transform:uppercase; margin-top:1px; }
+  .header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .badge-experimental { background:var(--yellow); color:#1a1a1a; font-family:var(--font-head); font-size:10px; font-weight:700; padding:3px 9px; border-radius:2px; letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap; }
+  #about-btn { display:inline-flex; align-items:center; justify-content:center; font-family:var(--font-body); font-size:12px; font-weight:600; background:transparent; border:1.5px solid rgba(255,255,255,.5); color:var(--white); border-radius:2px; padding:5px 14px; cursor:pointer; text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; transition:background .15s,border-color .15s; }
   #about-btn:hover { background:rgba(255,255,255,.12); border-color:var(--white); }
-  .header-back { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:rgba(255,255,255,.65); text-decoration:none; display:flex; align-items:center; gap:5px; transition:color .15s; }
+  .about-icon { display:none; width:16px; height:16px; }
+  .header-back { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:rgba(255,255,255,.65); text-decoration:none; display:flex; align-items:center; gap:5px; white-space:nowrap; transition:color .15s; }
   .header-back:hover { color:var(--yellow); }
-  .header-back::before { content:'←'; font-size:13px; }
+  .header-back::before { content:'←'; content:'←' / ''; font-size:13px; }
+  #about-btn:focus-visible, .header-back:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
 
   /* LAYOUT */
-  #app { display:flex; height:calc(100vh - 56px); overflow:hidden; }
+  #app { display:flex; height:calc(100vh - var(--header-h)); height:calc(100dvh - var(--header-h)); overflow:hidden; }
+
+  /* "Filters & legend" drawer toggle: only shown under 900px */
+  #drawer-toggle { display:none; }
 
   /* SIDEBAR */
   #sidebar { width:268px; flex-shrink:0; background:var(--white); border-right:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; z-index:500; }
@@ -119,32 +127,55 @@
   /* MAP */
   #map-container { flex:1; position:relative; overflow:hidden; }
   #map { width:100%; height:100%; }
-  #map-info-badge { position:absolute; bottom:28px; right:14px; background:rgba(255,255,255,.95); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:3px; padding:7px 11px; font-size:11px; color:var(--muted); z-index:900; pointer-events:none; max-width:210px; line-height:1.4; }
+  #map-info-badge { position:absolute; bottom:40px; right:14px; background:rgba(255,255,255,.95); border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:3px; padding:7px 11px; font-size:11px; color:var(--muted); z-index:900; pointer-events:none; max-width:210px; line-height:1.4; }
   #map-info-badge strong { font-family:var(--font-head); font-size:11px; font-weight:700; color:var(--blue-dark); display:block; margin-bottom:1px; }
 
-  /* View tabs (top-center map overlay) */
-  #view-tabs { position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:900; display:flex; background:var(--white); border:1px solid var(--border); border-radius:3px; box-shadow:0 2px 8px rgba(0,0,0,.12); overflow:hidden; }
-  .view-tab { font-family:var(--font-head); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; padding:8px 14px; border:none; background:var(--white); color:var(--muted); cursor:pointer; border-right:1px solid var(--border); transition:background .12s,color .12s; }
+  /* Map toolbar: search first, then the view tabs. One flex row that wraps
+     instead of overlapping; the container query below switches to a compact
+     layout whenever the map itself is narrow (phones, or Street View open). */
+  #map-toolbar { position:absolute; top:14px; left:14px; right:14px; z-index:900; display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; pointer-events:none; container:map-toolbar / inline-size; }
+  #map-toolbar > * { pointer-events:auto; }
+
+  /* View tabs */
+  #view-tabs { position:relative; z-index:1; flex:0 0 auto; display:flex; background:var(--white); border:1px solid var(--border); border-radius:3px; box-shadow:0 2px 8px rgba(0,0,0,.12); overflow:hidden; }
+  .view-tab { font-family:var(--font-head); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; padding:8px 14px; border:none; background:var(--white); color:var(--muted); cursor:pointer; border-right:1px solid var(--border); white-space:nowrap; transition:background .12s,color .12s; }
   .view-tab:last-child { border-right:none; }
   .view-tab:hover { color:var(--blue-dark); background:var(--surface); }
   .view-tab.active { background:var(--blue-dark); color:var(--white); }
+  .view-tab:focus-visible { outline:3px solid var(--yellow); outline-offset:-3px; }
 
   /* Search box */
-  #search-box { position:absolute; top:14px; left:14px; z-index:900; display:flex; gap:6px; }
-  #search-input { width:280px; padding:8px 12px; border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:3px; font-family:var(--font-body); font-size:12px; color:var(--body); background:var(--white); box-shadow:0 2px 8px rgba(0,0,0,.12); outline:none; }
-  #search-btn { padding:8px 14px; background:var(--blue-dark); color:var(--white); border:none; border-radius:3px; font-family:var(--font-head); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+  #search-box { flex:1 1 240px; max-width:360px; min-width:0; display:flex; gap:6px; }
+  #search-input { flex:1 1 auto; width:100%; min-width:0; padding:8px 12px; border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:3px; font-family:var(--font-body); font-size:12px; color:var(--body); background:var(--white); box-shadow:0 2px 8px rgba(0,0,0,.12); outline:none; }
+  #search-input:focus-visible { border-color:var(--blue-mid); border-left-color:var(--yellow); box-shadow:0 0 0 2px var(--blue-light), 0 2px 8px rgba(0,0,0,.12); }
+  #search-btn { flex:0 0 auto; padding:8px 14px; background:var(--blue-dark); color:var(--white); border:none; border-radius:3px; font-family:var(--font-head); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.12); }
   #search-btn:hover { background:var(--blue-mid); }
+  #search-btn:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
 
-  /* Search results dropdown */
-  #search-results { position:absolute; top:54px; left:14px; width:350px; background:var(--white); border:1px solid var(--border); border-top:none; border-radius:0 0 3px 3px; z-index:901; box-shadow:0 4px 12px rgba(0,0,0,.1); display:none; }
-  .sri { padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border); font-size:12px; }
-  .sri:hover { background:var(--surface); }
+  /* Anchor results below the whole toolbar so a wrapped tab row stays usable. */
+  #search-results { position:absolute; top:calc(100% + 4px); left:0; width:min(360px,100%); overflow-y:auto; overscroll-behavior:contain; background:var(--white); border:1px solid var(--border); border-radius:0 0 3px 3px; z-index:2; box-shadow:0 4px 12px rgba(0,0,0,.1); }
+
+  @container map-toolbar (max-width:700px) {
+    #search-box { flex-basis:100%; max-width:none; }
+    #search-results { width:100%; }
+    #view-tabs { flex-basis:100%; display:grid; grid-template-columns:1fr 1fr; }
+    .view-tab { padding:8px 6px; white-space:normal; line-height:1.25; border-bottom:1px solid var(--border); }
+    .view-tab:nth-child(2n) { border-right:none; }
+    .view-tab:nth-last-child(-n+2) { border-bottom:none; }
+  }
+
+  .sri { display:block; width:100%; padding:8px 12px; background:var(--white); border:0; border-bottom:1px solid var(--border); font:inherit; font-size:12px; text-align:left; }
+  button.sri { cursor:pointer; }
+  button.sri:hover { background:var(--surface); }
+  button.sri:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .sri:last-child { border-bottom:none; }
-  .sri-parcel { font-weight:600; color:var(--blue-dark); }
-  .sri-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+  .sri-parcel { display:block; font-weight:600; color:var(--blue-dark); }
+  .sri-meta { display:block; font-size:10px; color:var(--muted); margin-top:1px; }
 
   /* MAPLIBRE POPUP */
-  .maplibregl-popup-content { padding:0 !important; border-radius:3px !important; overflow:hidden; min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
+  .maplibregl-popup-content { display:flex; flex-direction:column; padding:0 !important; border-radius:3px !important; overflow-y:auto; overscroll-behavior:contain; min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
+  .popup-details { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+  .popup-details:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .popup-header { background:var(--blue-dark); padding:12px 14px 10px; border-bottom:3px solid var(--yellow); }
   .popup-header .address { font-family:var(--font-head); font-size:13px; font-weight:700; color:var(--white); margin-bottom:2px; }
   .popup-header .meta { font-size:11px; color:rgba(255,255,255,.6); }
@@ -158,7 +189,8 @@
   .popup-prob-bar-bg { background:rgba(255,255,255,.2); border-radius:2px; height:6px; position:relative; overflow:hidden; }
   .popup-prob-bar-fill { position:absolute; left:0; top:0; height:100%; border-radius:2px; }
   .popup-prob-label { display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,.5); margin-top:3px; }
-  .popup-body { padding:10px 14px 12px; }
+  .popup-body { padding:10px 14px 0; }
+  .popup-actions { flex:none; padding:0 14px 12px; }
   .popup-section-label { font-family:var(--font-head); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin:9px 0 5px; padding-bottom:4px; border-bottom:1px solid var(--border); }
   .popup-section-label:first-child { margin-top:0; }
   .life-history-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; }
@@ -175,8 +207,7 @@
   .popup-streetview-btn:hover { background:var(--blue-mid); }
   #streetview-panel { width:clamp(340px,36vw,520px); flex-shrink:0; min-height:0; background:var(--white); border-left:1px solid var(--border); display:flex; flex-direction:column; }
   #streetview-panel[hidden], #streetview-frame[hidden], #streetview-message[hidden] { display:none; }
-  #app.streetview-open #view-tabs { top:auto; bottom:60px; width:calc(100% - 28px); max-width:620px; }
-  #app.streetview-open .view-tab { flex:1; padding:8px 6px; font-size:10px; }
+  #app.streetview-open #map-info-badge { display:none; } /* map is narrow; sidebar has the same info */
   .streetview-head { padding:16px; background:var(--blue-dark); color:var(--white); border-bottom:3px solid var(--yellow); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
   .streetview-head h2 { font:700 14px var(--font-head); }
   #streetview-address { font-size:12px; margin-top:6px; }
@@ -192,8 +223,64 @@
   .streetview-foot p { margin-bottom:8px; line-height:1.5; }
   .streetview-foot a { font-weight:600; }
   .popup-streetview-btn:focus-visible, #streetview-close:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
+
+  /* RESPONSIVE: under 900px the app is one column. The map fills the space
+     above a "Filters & legend" bar; the sidebar opens below that bar as a
+     bottom sheet. Street View takes the same slot above the bar, so the two
+     never stack (opening one closes the other in JS). */
   @media (max-width:900px) {
-    #streetview-panel { position:fixed; bottom:0; right:0; width:min(100%,520px); height:65vh; height:65dvh; z-index:1100; border-top:1px solid var(--border); box-shadow:0 -6px 24px rgba(0,0,0,.18); }
+    #app { flex-direction:column; }
+    #map-container { order:1; flex:1 1 auto; }
+    #map-info-badge { display:none; }
+    #streetview-panel { order:2; width:auto; flex:0 0 55%; border-left:none; border-top:1px solid var(--border); overflow-y:auto; }
+    .streetview-head { padding:12px 16px; }
+    .streetview-viewport, #streetview-frame { min-height:160px; }
+    /* The short map can't fit the popup; the panel repeats its summary. The
+       popup comes back (and takes focus) when Street View closes. */
+    #app.streetview-open .maplibregl-popup { display:none; }
+    #drawer-toggle { order:3; flex:0 0 auto; display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:0 16px; background:var(--white); border:none; border-top:1px solid var(--border); box-shadow:0 -2px 8px rgba(0,0,0,.08); color:var(--blue-dark); font-family:var(--font-head); font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; cursor:pointer; position:relative; z-index:2; }
+    #drawer-toggle::before { content:''; width:16px; height:2px; background:var(--yellow); flex-shrink:0; }
+    #drawer-toggle:hover { background:var(--surface); }
+    #drawer-toggle:focus-visible { outline:3px solid var(--yellow); outline-offset:-3px; }
+    .drawer-chevron { width:14px; height:14px; margin-left:auto; flex-shrink:0; transition:transform .15s; }
+    #drawer-toggle[aria-expanded="true"] .drawer-chevron { transform:rotate(180deg); }
+    #sidebar { order:4; width:auto; flex:0 0 min(50%, 460px); border-right:none; }
+    /* Allow the breakpoint handler to move focus before hiding the sidebar. */
+    #app:not(.drawer-open) #sidebar:not(:focus-within) { display:none; }
+  }
+  @media (width > 900px) {
+    /* Keep a focused toggle available until focus moves into the sidebar. */
+    #drawer-toggle:focus { display:block; position:absolute; }
+  }
+
+  /* Header: About and Overview become icon buttons (text kept for screen
+     readers) once the full labels no longer fit beside the title */
+  @media (max-width:760px) {
+    #about-btn, .header-back { position:relative; width:32px; height:32px; padding:0; justify-content:center; }
+    .about-icon { display:block; }
+    .header-back::before { font-size:17px; }
+    .about-label, .back-label { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  }
+
+  /* Compact header for phones */
+  @media (max-width:600px) {
+    :root { --header-h:48px; }
+    #header { padding:0 10px; gap:8px; }
+    .header-brand { gap:6px; }
+    .header-brand::before { height:24px; }
+    .header-logo { height:24px; }
+    .header-brand-label { font-size:13px; }
+    .header-brand-label .brand-sub, .header-brand-label .brand-long { display:none; }
+    .header-right { gap:6px; }
+    .badge-experimental { font-size:9px; padding:2px 5px; letter-spacing:0.2px; }
+    #app.streetview-open #view-tabs { display:none; } /* keep the short map visible */
+  }
+  @media (max-width:359px) {
+    .header-logo { display:none; }
+  }
+
+  @media (prefers-reduced-motion:reduce) {
+    .drawer-chevron { transition:none; }
   }
 
   /* ABOUT MODAL */
@@ -205,7 +292,9 @@
   .modal-head p { font-size:11px; color:rgba(255,255,255,.6); margin-top:3px; }
   .modal-close { background:none; border:none; color:rgba(255,255,255,.7); font-size:20px; cursor:pointer; line-height:1; padding:2px; flex-shrink:0; margin-left:16px; transition:color .15s; }
   .modal-close:hover { color:var(--yellow); }
+  .modal-close:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
   .modal-scroll { overflow-y:auto; padding:20px 24px; flex:1; }
+  .modal-scroll:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .modal-scroll h5 { font-family:var(--font-head); font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--blue-dark); margin:18px 0 7px; padding-bottom:5px; border-bottom:1.5px solid var(--border); }
   .modal-scroll h5:first-child { margin-top:0; }
   .modal-scroll p { font-size:13px; color:var(--body); line-height:1.6; margin-bottom:8px; }
@@ -226,23 +315,32 @@
 <!-- HEADER -->
 <header id="header">
   <a class="header-brand" href="Vacancy Risk Landing Page.html" style="text-decoration:none;">
-    <img src="assets/logo2-white.png" alt="VPI" style="height:36px;width:auto;object-fit:contain;flex-shrink:0;">
+    <img class="header-logo" src="assets/logo2-white.png" alt="VPI">
     <div class="header-brand-label">
-      Vacancy Risk Dashboard
-      <span>Philly Stat 360 · Predictive Model</span>
+      <span class="brand-title">Vacancy Risk<span class="brand-long"> Dashboard</span></span>
+      <span class="brand-sub">Philly Stat 360 · Predictive Model</span>
     </div>
   </a>
   <div class="header-right">
     <span class="badge-experimental">Experimental</span>
-    <button id="about-btn">About This Tool</button>
-    <a href="Vacancy Risk Landing Page.html" class="header-back">Overview</a>
+    <button id="about-btn" type="button">
+      <svg class="about-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="3.6" r="1.4" fill="currentColor"/><path d="M8 7v6.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="about-label">About This Tool</span>
+    </button>
+    <a href="Vacancy Risk Landing Page.html" class="header-back"><span class="back-label">Overview</span></a>
   </div>
 </header>
 
-<div id="app">
+<main id="app">
+
+  <!-- Under 900px this bar opens the sidebar as a bottom sheet -->
+  <button id="drawer-toggle" type="button" aria-expanded="false" aria-controls="sidebar">
+    <span>Filters &amp; legend</span>
+    <svg class="drawer-chevron" viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M2.5 9.5 7 5l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 
   <!-- SIDEBAR -->
-  <aside id="sidebar">
+  <section id="sidebar" aria-label="Filters and legend">
 
     <!-- Legend (rendered per active view) -->
     <div class="sidebar-section">
@@ -337,24 +435,27 @@
       </div>
     </div>
 
-  </aside>
+  </section>
 
   <!-- MAP -->
   <div id="map-container">
+    <!-- Toolbar comes before the map so it is reached first with Tab -->
+    <div id="map-toolbar">
+      <div id="search-box" role="search">
+        <input id="search-input" type="text" placeholder="Search parcel number or address..." aria-label="Search flagged parcels by parcel number or address">
+        <button id="search-btn" type="button">Search</button>
+        <div id="search-results" hidden></div>
+      </div>
+
+      <div id="view-tabs" role="group" aria-label="Map view">
+        <button class="view-tab active" type="button" data-view="risk" aria-pressed="true">Predicted Risk</button>
+        <button class="view-tab" type="button" data-view="observed" aria-pressed="false">Predicted vs Observed</button>
+        <button class="view-tab" type="button" data-view="underreported" aria-pressed="false">Underreported Vacancy</button>
+        <button class="view-tab" type="button" data-view="heatmap" aria-pressed="false">Flagged Density</button>
+      </div>
+    </div>
+
     <div id="map"></div>
-
-    <div id="view-tabs">
-      <button class="view-tab active" data-view="risk">Predicted Risk</button>
-      <button class="view-tab" data-view="observed">Predicted vs Observed</button>
-      <button class="view-tab" data-view="underreported">Underreported Vacancy</button>
-      <button class="view-tab" data-view="heatmap">Flagged Density</button>
-    </div>
-
-    <div id="search-box">
-      <input id="search-input" type="text" placeholder="Search parcel number or address...">
-      <button id="search-btn">Search</button>
-    </div>
-    <div id="search-results"></div>
 
     <div id="map-info-badge">
       <strong id="map-mode-label2">Parcel Risk Layer</strong>
@@ -384,19 +485,19 @@
       <a id="streetview-google-link" target="_blank" rel="noopener noreferrer">Open in Google Maps &#8599;</a>
     </div>
   </section>
-</div>
+</main>
 
 <!-- ABOUT MODAL -->
-<div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true">
+<div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="about-title">
   <div class="modal-box">
     <div class="modal-head">
       <div>
-        <h2>About This Dashboard</h2>
+        <h2 id="about-title">About This Dashboard</h2>
         <p>Philly Stat 360 &middot; Residential Vacancy Risk Model</p>
       </div>
-      <button class="modal-close" id="modal-close-btn">&times;</button>
+      <button class="modal-close" id="modal-close-btn" type="button" aria-label="Close">&times;</button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-scroll" tabindex="0" role="region" aria-label="About this dashboard">
       <h5>What this shows</h5>
       <p>An interactive map of predicted vacancy risk scores for residential parcels across Philadelphia. The ward choropleth shows average risk by ward; zoom to level 13+ for individual parcel risk colors.</p>
       <h5>Model performance</h5>
@@ -472,31 +573,35 @@ function buildPopup(p) {
   const { label, cls } = riskClass(prob);
   const barColor = prob >= 0.6 ? '#cc3000' : prob >= 0.4 ? '#c87800' : '#2176d2';
   return `
-    <div class="popup-header">
-      <div class="address">${p.address || 'Address unavailable'}</div>
-      <div class="meta">Parcel ${p.parcel_number || 'N/A'} &middot; ZIP ${p.zip_code||'N/A'} &middot; Tract ${p.census_tract||'N/A'} &middot; Ward ${p.geographic_ward||'N/A'}</div>
-      <span class="popup-risk-badge ${cls}">${label}</span>
-      <div class="popup-prob-bar-wrap">
-        <div class="popup-prob-bar-bg">
-          <div class="popup-prob-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div>
+    <div class="popup-details" role="region" aria-label="Parcel details">
+      <div class="popup-header">
+        <div class="address">${p.address || 'Address unavailable'}</div>
+        <div class="meta">Parcel ${p.parcel_number || 'N/A'} &middot; ZIP ${p.zip_code||'N/A'} &middot; Tract ${p.census_tract||'N/A'} &middot; Ward ${p.geographic_ward||'N/A'}</div>
+        <span class="popup-risk-badge ${cls}">${label}</span>
+        <div class="popup-prob-bar-wrap">
+          <div class="popup-prob-bar-bg">
+            <div class="popup-prob-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div>
+          </div>
+          <div class="popup-prob-label">
+            <span>Ensemble: <b>${pct}%</b></span>
+            <span>${p.qtile_tier||''}</span>
+          </div>
         </div>
-        <div class="popup-prob-label">
-          <span>Ensemble: <b>${pct}%</b></span>
-          <span>${p.qtile_tier||''}</span>
+      </div>
+      <div class="popup-body">
+        <div class="popup-section-label">Model Probabilities</div>
+        <div class="life-history-grid">
+          <div class="lh-item"><span class="lh-val">${((p.ensemble_prob||0)*100).toFixed(2)}%</span><span class="lh-lbl">Ensemble</span></div>
+          <div class="lh-item"><span class="lh-val">${p.risk_score||0}</span><span class="lh-lbl">Risk Score</span></div>
+        </div>
+        <div class="popup-section-label">Model Flags</div>
+        <div class="ovs-indicators">
+          <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
+          <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
         </div>
       </div>
     </div>
-    <div class="popup-body">
-      <div class="popup-section-label">Model Probabilities</div>
-      <div class="life-history-grid">
-        <div class="lh-item"><span class="lh-val">${((p.ensemble_prob||0)*100).toFixed(2)}%</span><span class="lh-lbl">Ensemble</span></div>
-        <div class="lh-item"><span class="lh-val">${p.risk_score||0}</span><span class="lh-lbl">Risk Score</span></div>
-      </div>
-      <div class="popup-section-label">Model Flags</div>
-      <div class="ovs-indicators">
-        <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
-        <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
-      </div>
+    <div class="popup-actions">
       <button class="popup-streetview-btn" type="button">View Street View</button>
       <a class="popup-atlas-link" href="https://atlas.phila.gov/#/${p.parcel_number}" target="_blank" rel="noopener">
         View on Atlas Phila &#8599;
@@ -511,11 +616,34 @@ let streetViewTimer = null;
 const streetViewPanel = document.getElementById('streetview-panel');
 const streetViewFrame = document.getElementById('streetview-frame');
 const streetViewStatus = document.getElementById('streetview-status');
+const mapContainer = document.getElementById('map-container');
+const mapToolbar = document.getElementById('map-toolbar');
 
 function showParcelPopup(props, location) {
   selectedStreetViewParcel = { props, lat: Number(location.lat), lng: Number(location.lng) };
   popup.setLngLat(location).setHTML(buildPopup(props)).addTo(map);
+  nudgePopupIntoView();
   if (!streetViewPanel.hidden) renderStreetView();
+}
+
+// Keep the actions visible in short maps and scroll the parcel details above them.
+function nudgePopupIntoView() {
+  if (!map || !popup.isOpen()) return;
+  const element = popup.getElement();
+  if (!element.offsetHeight) return;
+  const top = mapToolbar.getBoundingClientRect().bottom + 8;
+  const bottom = mapContainer.getBoundingClientRect().bottom - 40;
+  const content = element.querySelector('.maplibregl-popup-content');
+  const details = element.querySelector('.popup-details');
+  const tip = element.querySelector('.maplibregl-popup-tip');
+  const maxHeight = Math.max(0, Math.floor(bottom - top - tip.offsetHeight));
+  content.style.maxHeight = `${maxHeight}px`;
+  details.tabIndex = details.scrollHeight > details.clientHeight ? 0 : -1;
+  // MapLibre chooses the anchor from the popup dimensions.
+  popup.setLngLat(popup.getLngLat());
+  const box = element.getBoundingClientRect();
+  const dy = box.bottom > bottom ? box.bottom - bottom : box.top < top ? box.top - top : 0;
+  if (dy) map.panBy([0, dy], { duration: 0 });
 }
 
 function renderStreetView() {
@@ -575,30 +703,84 @@ function renderStreetView() {
   }, 15000);
 }
 
-document.getElementById('map-container').addEventListener('click', event => {
+// ── Responsive drawer (sidebar becomes a bottom sheet under 900px) ──
+const appEl = document.getElementById('app');
+const drawerToggle = document.getElementById('drawer-toggle');
+const sidebar = document.getElementById('sidebar');
+const drawerLayout = window.matchMedia('(max-width: 900px)');
+
+drawerLayout.addEventListener('change', ({ matches }) => {
+  if (matches && !appEl.classList.contains('drawer-open') && sidebar.contains(document.activeElement)) {
+    drawerToggle.focus();
+  } else if (!matches && document.activeElement === drawerToggle) {
+    sidebar.querySelector(':is(button, select, input):enabled').focus();
+  }
+});
+
+function setDrawerOpen(open) {
+  appEl.classList.toggle('drawer-open', open);
+  drawerToggle.setAttribute('aria-expanded', String(open));
+  if (map) map.resize();
+  nudgePopupIntoView();
+}
+
+drawerToggle.addEventListener('click', () => {
+  const open = !appEl.classList.contains('drawer-open');
+  // Street View and the drawer share the space under the map.
+  if (open && !streetViewPanel.hidden) closeStreetView({ restoreFocus: false });
+  setDrawerOpen(open);
+});
+
+// After the map shrinks for a panel, pan only if the parcel left the view.
+function keepSelectedParcelInView() {
+  if (!map || !selectedStreetViewParcel) return;
+  const { lng, lat } = selectedStreetViewParcel;
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+  if (!map.getBounds().contains([lng, lat])) map.panTo([lng, lat]);
+}
+
+mapContainer.addEventListener('click', event => {
   const button = event.target.closest('.popup-streetview-btn');
   if (!button || !selectedStreetViewParcel) return;
   streetViewTrigger = button;
+  if (appEl.classList.contains('drawer-open')) setDrawerOpen(false);
   streetViewPanel.hidden = false;
-  document.getElementById('app').classList.add('streetview-open');
+  appEl.classList.add('streetview-open');
   renderStreetView();
-  if (map) map.resize();
+  if (map) {
+    map.resize();
+    keepSelectedParcelInView();
+    nudgePopupIntoView();
+  }
   document.getElementById('streetview-close').focus();
 });
 
-function closeStreetView() {
+function closeStreetView({ restoreFocus = true } = {}) {
   clearTimeout(streetViewTimer);
   streetViewFrame.onload = null;
   streetViewFrame.removeAttribute('src');
   streetViewPanel.hidden = true;
-  document.getElementById('app').classList.remove('streetview-open');
+  appEl.classList.remove('streetview-open');
   if (map) map.resize();
-  if (streetViewTrigger?.isConnected) streetViewTrigger.focus();
+  nudgePopupIntoView();
+  if (!restoreFocus) return;
+  if (streetViewTrigger?.isConnected) streetViewTrigger.focus({ preventScroll:true });
   else document.getElementById('search-input').focus();
 }
-document.getElementById('streetview-close').addEventListener('click', closeStreetView);
+document.getElementById('streetview-close').addEventListener('click', () => closeStreetView());
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && !streetViewPanel.hidden) closeStreetView();
+  if (event.key !== 'Escape') return;
+  if (aboutModal.classList.contains('open')) {
+    closeAbout();
+  } else if (searchBox.contains(document.activeElement) && !searchResults.hidden) {
+    searchInput.focus();
+    hideSearchResults();
+  } else if (!streetViewPanel.hidden) {
+    closeStreetView();
+  } else if (drawerLayout.matches && appEl.classList.contains('drawer-open')) {
+    drawerToggle.focus();
+    setDrawerOpen(false);
+  }
 });
 
 // ── Color/opacity ramps for parcel layer ─────────────────────
@@ -1092,8 +1274,10 @@ document.getElementById('choro-level').addEventListener('change', e => {
 function applyMapView(view) {
   if (!LEGENDS[view]) view = 'risk';
   mapView = view;
-  document.querySelectorAll('.view-tab').forEach(b =>
-    b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.view-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+    b.setAttribute('aria-pressed', String(b.dataset.view === view));
+  });
   renderLegend(view);
 
   if (map && map.getLayer('parcel-fill')) {
@@ -1122,15 +1306,47 @@ document.querySelectorAll('.view-tab').forEach(btn => {
 });
 
 // ── Search (Option B: flagged parcels only) ───────────────────
+const searchBox = document.getElementById('search-box');
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+let searchRevision = 0;
+
+function hideSearchResults() {
+  searchRevision++;
+  searchResults.hidden = true;
+}
+
+function fitSearchResults() {
+  if (searchResults.hidden) return;
+  const navigation = mapContainer.querySelector('.maplibregl-ctrl-bottom-left .maplibregl-ctrl');
+  const bottom = navigation?.getBoundingClientRect().top ?? mapContainer.getBoundingClientRect().bottom;
+  const room = bottom - searchResults.getBoundingClientRect().top - 8;
+  searchResults.style.maxHeight = `${Math.max(0, Math.min(420, room))}px`;
+}
+
+const mapLayoutObserver = new ResizeObserver(() => {
+  if (map) map.resize();
+  nudgePopupIntoView();
+  fitSearchResults();
+});
+mapLayoutObserver.observe(mapContainer);
+mapLayoutObserver.observe(mapToolbar);
+
 document.getElementById('search-btn').addEventListener('click', doSearch);
-document.getElementById('search-input').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+searchInput.addEventListener('input', hideSearchResults);
+searchBox.addEventListener('focusout', e => {
+  if (e.relatedTarget && !searchBox.contains(e.relatedTarget)) hideSearchResults();
+});
 
 async function doSearch() {
-  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const q = searchInput.value.trim().toLowerCase();
   if (!q) return;
-  const box = document.getElementById('search-results');
+  hideSearchResults();
+  const revision = searchRevision;
   try {
     const fc = await getFlaggedData();
+    if (revision !== searchRevision) return;
     const results = [];
     for (const f of fc.features) {
       const props = f.properties;
@@ -1144,41 +1360,41 @@ async function doSearch() {
         if (results.length >= 15) break;
       }
     }
-    box.innerHTML = '';
+    searchResults.replaceChildren();
     if (!results.length) {
       const empty = document.createElement('div');
       empty.className = 'sri';
       empty.innerHTML = '<div class="sri-meta">No flagged parcels match. Search covers the flagged subset only.</div>';
-      box.appendChild(empty);
-      box.style.display = 'block';
-      return;
+      searchResults.appendChild(empty);
     }
     results.forEach(pr => {
-      const div = document.createElement('div');
-      div.className = 'sri';
-      div.innerHTML = `
-        <div class="sri-parcel">${pr.parcel_number} <span style="color:var(--muted);font-weight:400;font-size:11px">${pr.address||''}</span></div>
-        <div class="sri-meta">${pr.qtile_tier||''} · Ward ${pr.geographic_ward||'N/A'} · ZIP ${pr.zip_code||'N/A'}</div>`;
-      div.addEventListener('click', () => {
-        box.style.display = 'none';
-        document.getElementById('search-input').value = pr.parcel_number;
-        if (popup) popup.remove();
+      const result = document.createElement('button');
+      result.type = 'button';
+      result.className = 'sri';
+      result.innerHTML = `
+        <span class="sri-parcel">${pr.parcel_number} <span style="color:var(--muted);font-weight:400;font-size:11px">${pr.address||''}</span></span>
+        <span class="sri-meta">${pr.qtile_tier||''} · Ward ${pr.geographic_ward||'N/A'} · ZIP ${pr.zip_code||'N/A'}</span>`;
+      result.addEventListener('click', () => {
+        searchInput.value = pr.parcel_number;
+        searchInput.focus({ preventScroll:true });
+        hideSearchResults();
         if (!map) return;
-        map.flyTo({ center: [pr.lng, pr.lat], zoom: 16 });
+        map.stop();
+        popup.remove();
         map.once('moveend', () => {
           showParcelPopup(pr, { lng: pr.lng, lat: pr.lat });
         });
+        map.flyTo({ center: [pr.lng, pr.lat], zoom: 16 });
       });
-      box.appendChild(div);
+      searchResults.appendChild(result);
     });
-    box.style.display = 'block';
+    searchResults.hidden = false;
+    fitSearchResults();
   } catch(e) { console.warn('Search failed:', e); }
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('#search-results') && !e.target.closest('#search-box')) {
-    document.getElementById('search-results').style.display = 'none';
-  }
+  if (!searchBox.contains(e.target)) hideSearchResults();
 });
 
 // ── Map mode badge ────────────────────────────────────────────
@@ -1364,14 +1580,34 @@ function renderWardChart(top10) {
 }
 
 // ── About modal ───────────────────────────────────────────────
-document.getElementById('about-btn').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.add('open');
+const aboutModal = document.getElementById('aboutModal');
+const aboutBtn = document.getElementById('about-btn');
+const aboutBackground = [document.getElementById('header'), appEl];
+
+function closeAbout() {
+  aboutModal.classList.remove('open');
+  aboutBackground.forEach(el => { el.inert = false; });
+  aboutBtn.focus();
+}
+
+aboutBtn.addEventListener('click', () => {
+  aboutModal.classList.add('open');
+  aboutBackground.forEach(el => { el.inert = true; });
+  document.getElementById('modal-close-btn').focus();
 });
-document.getElementById('modal-close-btn').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.remove('open');
-});
-document.getElementById('modal-close-btn2').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.remove('open');
+document.getElementById('modal-close-btn').addEventListener('click', closeAbout);
+document.getElementById('modal-close-btn2').addEventListener('click', closeAbout);
+aboutModal.addEventListener('keydown', event => {
+  if (event.key !== 'Tab') return;
+  const items = aboutModal.querySelectorAll('button, [tabindex="0"]');
+  const first = items[0], last = items[items.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 });
 </script>
 </body>
