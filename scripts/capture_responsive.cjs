@@ -12,14 +12,15 @@
  *   --out <dir>        screenshot folder (default screenshots/, gitignored)
  *   --widths a,b,c     widths to run (default: all listed below; other
  *                      widths use an 800px-tall viewport)
- *   --streetview       also open Street View from a searched parcel at each width
+ *   --streetview       also check search results and open Street View at each width
  *   --channel <name>   browser channel, e.g. chrome; by default Playwright's
  *                      Chromium is tried first, then the installed Chrome
  *
  * For each width it saves a screenshot, checks that header and map controls do
  * not overlap or overflow, checks the map's share of the viewport height
  * (>= 60% at 390x844 with the drawer closed) and, under 900px, that the
- * "Filters & legend" drawer opens, closes on Escape and returns focus.
+ * "Filters & legend" drawer opens, closes on Escape and returns focus. The
+ * 390px run also checks focus when crossing the desktop breakpoint.
  * Exits with code 1 if any check fails.
  */
 'use strict';
@@ -159,6 +160,14 @@ async function checkDrawer(page, problems) {
   }));
   if (opened.expanded !== 'true' || !opened.sidebarVisible) problems.push('drawer did not open from the keyboard');
   return async () => {
+    const about = page.locator('#about-btn');
+    await about.click();
+    await page.keyboard.press('Escape');
+    if (await page.locator('#aboutModal').isVisible()
+        || await toggle.getAttribute('aria-expanded') !== 'true'
+        || !(await about.evaluate(el => el === document.activeElement))) {
+      problems.push('Escape did not close About and leave the drawer open');
+    }
     await page.keyboard.press('Escape');
     const closed = await page.evaluate(() => ({
       expanded: document.getElementById('drawer-toggle').getAttribute('aria-expanded'),
@@ -170,15 +179,75 @@ async function checkDrawer(page, problems) {
   };
 }
 
+async function checkBreakpointFocus(page, problems) {
+  const original = page.viewportSize();
+  try {
+    await page.locator('#drawer-toggle').focus();
+    await page.setViewportSize({ width:1280, height:original.height });
+    await page.waitForFunction(() => document.activeElement.id === 'choro-level', null, { timeout:3000 });
+    await page.setViewportSize(original);
+    await page.waitForFunction(() => document.activeElement.id === 'drawer-toggle', null, { timeout:3000 });
+    if (await page.locator('#sidebar').isVisible()) problems.push('sidebar opened during breakpoint focus transfer');
+  } catch (_) {
+    problems.push('focus was lost across the drawer breakpoint');
+  } finally {
+    await page.setViewportSize(original);
+  }
+}
+
+async function findParcel(page, problems) {
+  const input = page.locator('#search-input');
+  const results = page.locator('#search-results');
+  const first = results.locator('button.sri').first();
+  async function search() {
+    await input.press('Enter');
+    await first.waitFor({ timeout: 20000 });
+  }
+  await input.fill(SEARCH_QUERY);
+  await search();
+  const resultsTop = (await results.boundingBox()).y;
+  const toolbar = await page.locator('#map-toolbar').boundingBox();
+  if (resultsTop < toolbar.y + toolbar.height) problems.push('search results cover the toolbar');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  if (!(await first.evaluate(el => el === document.activeElement))) problems.push('the first search result is unreachable with Tab');
+  await page.keyboard.press('Tab');
+  if (!(await results.isHidden())
+      || !(await page.locator('.view-tab').first().evaluate(el => el === document.activeElement))) {
+    problems.push('Tab did not dismiss search results and reach the first view tab');
+  }
+  await search();
+  await page.keyboard.press('Escape');
+  if (!(await results.isHidden()) || !(await input.evaluate(el => el === document.activeElement))) {
+    problems.push('Escape did not dismiss search results and return focus to search');
+  }
+  await search();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Enter');
+}
+
 async function openStreetView(page, problems) {
-  await page.fill('#search-input', SEARCH_QUERY);
-  await page.click('#search-btn');
-  const first = page.locator('#search-results .sri .sri-parcel').first();
-  await first.waitFor({ timeout: 20000 });
-  await first.click();
+  await findParcel(page, problems);
   const btn = page.locator('.popup-streetview-btn');
   await btn.waitFor({ timeout: 20000 });
+  const toggle = page.locator('#drawer-toggle');
+  if (await toggle.isVisible()) {
+    await toggle.click();
+    try {
+      await page.waitForFunction(() => {
+        const button = document.querySelector('.popup-streetview-btn');
+        const { x, y, width, height } = button.getBoundingClientRect();
+        return button.contains(document.elementFromPoint(x + width / 2, y + height / 2));
+      }, null, { timeout:2000 });
+    } catch (_) {
+      problems.push('the open drawer clips the Street View button');
+    }
+  }
   await btn.click();
+  if (await toggle.isVisible() && await toggle.getAttribute('aria-expanded') !== 'false') {
+    problems.push('opening Street View did not close the drawer');
+  }
   await page.waitForTimeout(800);
   const state = await page.evaluate(() => {
     const rect = el => {
@@ -247,6 +316,7 @@ async function openStreetView(page, problems) {
         await page.screenshot({ path: path.join(args.out, `${name}-drawer.png`) });
         await closeDrawer();
       }
+      if (width === 390) await checkBreakpointFocus(page, problems);
     }
     if (args.streetview) {
       try {

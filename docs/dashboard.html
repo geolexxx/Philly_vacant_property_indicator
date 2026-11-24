@@ -145,31 +145,37 @@
   .view-tab:focus-visible { outline:3px solid var(--yellow); outline-offset:-3px; }
 
   /* Search box */
-  #search-box { position:relative; z-index:2; flex:1 1 240px; max-width:360px; min-width:0; display:flex; gap:6px; }
+  #search-box { flex:1 1 240px; max-width:360px; min-width:0; display:flex; gap:6px; }
   #search-input { flex:1 1 auto; width:100%; min-width:0; padding:8px 12px; border:1px solid var(--border); border-left:3px solid var(--yellow); border-radius:3px; font-family:var(--font-body); font-size:12px; color:var(--body); background:var(--white); box-shadow:0 2px 8px rgba(0,0,0,.12); outline:none; }
   #search-input:focus-visible { border-color:var(--blue-mid); border-left-color:var(--yellow); box-shadow:0 0 0 2px var(--blue-light), 0 2px 8px rgba(0,0,0,.12); }
   #search-btn { flex:0 0 auto; padding:8px 14px; background:var(--blue-dark); color:var(--white); border:none; border-radius:3px; font-family:var(--font-head); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.12); }
   #search-btn:hover { background:var(--blue-mid); }
   #search-btn:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
 
+  /* Anchor results below the whole toolbar so a wrapped tab row stays usable. */
+  #search-results { position:absolute; top:calc(100% + 4px); left:0; width:min(360px,100%); overflow-y:auto; overscroll-behavior:contain; background:var(--white); border:1px solid var(--border); border-radius:0 0 3px 3px; z-index:2; box-shadow:0 4px 12px rgba(0,0,0,.1); }
+
   @container map-toolbar (max-width:700px) {
     #search-box { flex-basis:100%; max-width:none; }
+    #search-results { width:100%; }
     #view-tabs { flex-basis:100%; display:grid; grid-template-columns:1fr 1fr; }
     .view-tab { padding:8px 6px; white-space:normal; line-height:1.25; border-bottom:1px solid var(--border); }
     .view-tab:nth-child(2n) { border-right:none; }
     .view-tab:nth-last-child(-n+2) { border-bottom:none; }
   }
 
-  /* Search results dropdown (anchored under the search box) */
-  #search-results { position:absolute; top:calc(100% + 4px); left:0; right:0; max-height:min(420px, 60vh); overflow-y:auto; background:var(--white); border:1px solid var(--border); border-top:none; border-radius:0 0 3px 3px; z-index:901; box-shadow:0 4px 12px rgba(0,0,0,.1); display:none; }
-  .sri { padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border); font-size:12px; }
-  .sri:hover { background:var(--surface); }
+  .sri { display:block; width:100%; padding:8px 12px; background:var(--white); border:0; border-bottom:1px solid var(--border); font:inherit; font-size:12px; text-align:left; }
+  button.sri { cursor:pointer; }
+  button.sri:hover { background:var(--surface); }
+  button.sri:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .sri:last-child { border-bottom:none; }
-  .sri-parcel { font-weight:600; color:var(--blue-dark); }
-  .sri-meta { font-size:10px; color:var(--muted); margin-top:1px; }
+  .sri-parcel { display:block; font-weight:600; color:var(--blue-dark); }
+  .sri-meta { display:block; font-size:10px; color:var(--muted); margin-top:1px; }
 
   /* MAPLIBRE POPUP */
-  .maplibregl-popup-content { padding:0 !important; border-radius:3px !important; overflow:hidden; min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
+  .maplibregl-popup-content { display:flex; flex-direction:column; padding:0 !important; border-radius:3px !important; overflow-y:auto; overscroll-behavior:contain; min-width:272px; max-width:304px; box-shadow:0 6px 24px rgba(0,0,0,.18) !important; font-family:var(--font-body); }
+  .popup-details { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+  .popup-details:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .popup-header { background:var(--blue-dark); padding:12px 14px 10px; border-bottom:3px solid var(--yellow); }
   .popup-header .address { font-family:var(--font-head); font-size:13px; font-weight:700; color:var(--white); margin-bottom:2px; }
   .popup-header .meta { font-size:11px; color:rgba(255,255,255,.6); }
@@ -183,7 +189,8 @@
   .popup-prob-bar-bg { background:rgba(255,255,255,.2); border-radius:2px; height:6px; position:relative; overflow:hidden; }
   .popup-prob-bar-fill { position:absolute; left:0; top:0; height:100%; border-radius:2px; }
   .popup-prob-label { display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,.5); margin-top:3px; }
-  .popup-body { padding:10px 14px 12px; }
+  .popup-body { padding:10px 14px 0; }
+  .popup-actions { flex:none; padding:0 14px 12px; }
   .popup-section-label { font-family:var(--font-head); font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--muted); margin:9px 0 5px; padding-bottom:4px; border-bottom:1px solid var(--border); }
   .popup-section-label:first-child { margin-top:0; }
   .life-history-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; }
@@ -238,7 +245,12 @@
     .drawer-chevron { width:14px; height:14px; margin-left:auto; flex-shrink:0; transition:transform .15s; }
     #drawer-toggle[aria-expanded="true"] .drawer-chevron { transform:rotate(180deg); }
     #sidebar { order:4; width:auto; flex:0 0 min(50%, 460px); border-right:none; }
-    #app:not(.drawer-open) #sidebar { display:none; }
+    /* Allow the breakpoint handler to move focus before hiding the sidebar. */
+    #app:not(.drawer-open) #sidebar:not(:focus-within) { display:none; }
+  }
+  @media (width > 900px) {
+    /* Keep a focused toggle available until focus moves into the sidebar. */
+    #drawer-toggle:focus { display:block; position:absolute; }
   }
 
   /* Header: About and Overview become icon buttons (text kept for screen
@@ -280,7 +292,9 @@
   .modal-head p { font-size:11px; color:rgba(255,255,255,.6); margin-top:3px; }
   .modal-close { background:none; border:none; color:rgba(255,255,255,.7); font-size:20px; cursor:pointer; line-height:1; padding:2px; flex-shrink:0; margin-left:16px; transition:color .15s; }
   .modal-close:hover { color:var(--yellow); }
+  .modal-close:focus-visible { outline:3px solid var(--yellow); outline-offset:2px; }
   .modal-scroll { overflow-y:auto; padding:20px 24px; flex:1; }
+  .modal-scroll:focus-visible { outline:3px solid var(--blue-mid); outline-offset:-3px; }
   .modal-scroll h5 { font-family:var(--font-head); font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--blue-dark); margin:18px 0 7px; padding-bottom:5px; border-bottom:1.5px solid var(--border); }
   .modal-scroll h5:first-child { margin-top:0; }
   .modal-scroll p { font-size:13px; color:var(--body); line-height:1.6; margin-bottom:8px; }
@@ -430,7 +444,7 @@
       <div id="search-box" role="search">
         <input id="search-input" type="text" placeholder="Search parcel number or address..." aria-label="Search flagged parcels by parcel number or address">
         <button id="search-btn" type="button">Search</button>
-        <div id="search-results"></div>
+        <div id="search-results" hidden></div>
       </div>
 
       <div id="view-tabs" role="group" aria-label="Map view">
@@ -474,16 +488,16 @@
 </main>
 
 <!-- ABOUT MODAL -->
-<div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true">
+<div class="modal-overlay" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="about-title">
   <div class="modal-box">
     <div class="modal-head">
       <div>
-        <h2>About This Dashboard</h2>
+        <h2 id="about-title">About This Dashboard</h2>
         <p>Philly Stat 360 &middot; Residential Vacancy Risk Model</p>
       </div>
-      <button class="modal-close" id="modal-close-btn">&times;</button>
+      <button class="modal-close" id="modal-close-btn" type="button" aria-label="Close">&times;</button>
     </div>
-    <div class="modal-scroll">
+    <div class="modal-scroll" tabindex="0" role="region" aria-label="About this dashboard">
       <h5>What this shows</h5>
       <p>An interactive map of predicted vacancy risk scores for residential parcels across Philadelphia. The ward choropleth shows average risk by ward; zoom to level 13+ for individual parcel risk colors.</p>
       <h5>Model performance</h5>
@@ -559,31 +573,35 @@ function buildPopup(p) {
   const { label, cls } = riskClass(prob);
   const barColor = prob >= 0.6 ? '#cc3000' : prob >= 0.4 ? '#c87800' : '#2176d2';
   return `
-    <div class="popup-header">
-      <div class="address">${p.address || 'Address unavailable'}</div>
-      <div class="meta">Parcel ${p.parcel_number || 'N/A'} &middot; ZIP ${p.zip_code||'N/A'} &middot; Tract ${p.census_tract||'N/A'} &middot; Ward ${p.geographic_ward||'N/A'}</div>
-      <span class="popup-risk-badge ${cls}">${label}</span>
-      <div class="popup-prob-bar-wrap">
-        <div class="popup-prob-bar-bg">
-          <div class="popup-prob-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div>
+    <div class="popup-details" role="region" aria-label="Parcel details">
+      <div class="popup-header">
+        <div class="address">${p.address || 'Address unavailable'}</div>
+        <div class="meta">Parcel ${p.parcel_number || 'N/A'} &middot; ZIP ${p.zip_code||'N/A'} &middot; Tract ${p.census_tract||'N/A'} &middot; Ward ${p.geographic_ward||'N/A'}</div>
+        <span class="popup-risk-badge ${cls}">${label}</span>
+        <div class="popup-prob-bar-wrap">
+          <div class="popup-prob-bar-bg">
+            <div class="popup-prob-bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor};"></div>
+          </div>
+          <div class="popup-prob-label">
+            <span>Ensemble: <b>${pct}%</b></span>
+            <span>${p.qtile_tier||''}</span>
+          </div>
         </div>
-        <div class="popup-prob-label">
-          <span>Ensemble: <b>${pct}%</b></span>
-          <span>${p.qtile_tier||''}</span>
+      </div>
+      <div class="popup-body">
+        <div class="popup-section-label">Model Probabilities</div>
+        <div class="life-history-grid">
+          <div class="lh-item"><span class="lh-val">${((p.ensemble_prob||0)*100).toFixed(2)}%</span><span class="lh-lbl">Ensemble</span></div>
+          <div class="lh-item"><span class="lh-val">${p.risk_score||0}</span><span class="lh-lbl">Risk Score</span></div>
+        </div>
+        <div class="popup-section-label">Model Flags</div>
+        <div class="ovs-indicators">
+          <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
+          <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
         </div>
       </div>
     </div>
-    <div class="popup-body">
-      <div class="popup-section-label">Model Probabilities</div>
-      <div class="life-history-grid">
-        <div class="lh-item"><span class="lh-val">${((p.ensemble_prob||0)*100).toFixed(2)}%</span><span class="lh-lbl">Ensemble</span></div>
-        <div class="lh-item"><span class="lh-val">${p.risk_score||0}</span><span class="lh-lbl">Risk Score</span></div>
-      </div>
-      <div class="popup-section-label">Model Flags</div>
-      <div class="ovs-indicators">
-        <div class="ovs-item">Ensemble flagged: <b>${p.ensemble_flag ? 'Yes' : 'No'}</b></div>
-        <div class="ovs-item">Observed vacant (city signal): <b>${p.ovs == 1 ? 'Yes' : 'No'}</b></div>
-      </div>
+    <div class="popup-actions">
       <button class="popup-streetview-btn" type="button">View Street View</button>
       <a class="popup-atlas-link" href="https://atlas.phila.gov/#/${p.parcel_number}" target="_blank" rel="noopener">
         View on Atlas Phila &#8599;
@@ -598,6 +616,8 @@ let streetViewTimer = null;
 const streetViewPanel = document.getElementById('streetview-panel');
 const streetViewFrame = document.getElementById('streetview-frame');
 const streetViewStatus = document.getElementById('streetview-status');
+const mapContainer = document.getElementById('map-container');
+const mapToolbar = document.getElementById('map-toolbar');
 
 function showParcelPopup(props, location) {
   selectedStreetViewParcel = { props, lat: Number(location.lat), lng: Number(location.lng) };
@@ -606,17 +626,24 @@ function showParcelPopup(props, location) {
   if (!streetViewPanel.hidden) renderStreetView();
 }
 
-// Phones have little map height and a taller toolbar: pan just enough that
-// the popup sits between the toolbar and the bottom map controls.
+// Keep the actions visible in short maps and scroll the parcel details above them.
 function nudgePopupIntoView() {
   if (!map || !popup.isOpen()) return;
-  const mapBox = map.getContainer().getBoundingClientRect();
-  const top = document.getElementById('map-toolbar').getBoundingClientRect().bottom + 8;
-  const bottom = mapBox.bottom - 40;
-  const box = popup.getElement().getBoundingClientRect();
-  if (!box.height || box.height > bottom - top) return; // hidden, or can't fit
+  const element = popup.getElement();
+  if (!element.offsetHeight) return;
+  const top = mapToolbar.getBoundingClientRect().bottom + 8;
+  const bottom = mapContainer.getBoundingClientRect().bottom - 40;
+  const content = element.querySelector('.maplibregl-popup-content');
+  const details = element.querySelector('.popup-details');
+  const tip = element.querySelector('.maplibregl-popup-tip');
+  const maxHeight = Math.max(0, Math.floor(bottom - top - tip.offsetHeight));
+  content.style.maxHeight = `${maxHeight}px`;
+  details.tabIndex = details.scrollHeight > details.clientHeight ? 0 : -1;
+  // MapLibre chooses the anchor from the popup dimensions.
+  popup.setLngLat(popup.getLngLat());
+  const box = element.getBoundingClientRect();
   const dy = box.bottom > bottom ? box.bottom - bottom : box.top < top ? box.top - top : 0;
-  if (dy) map.panBy([0, dy], { duration: 250 });
+  if (dy) map.panBy([0, dy], { duration: 0 });
 }
 
 function renderStreetView() {
@@ -679,12 +706,22 @@ function renderStreetView() {
 // ── Responsive drawer (sidebar becomes a bottom sheet under 900px) ──
 const appEl = document.getElementById('app');
 const drawerToggle = document.getElementById('drawer-toggle');
+const sidebar = document.getElementById('sidebar');
 const drawerLayout = window.matchMedia('(max-width: 900px)');
+
+drawerLayout.addEventListener('change', ({ matches }) => {
+  if (matches && !appEl.classList.contains('drawer-open') && sidebar.contains(document.activeElement)) {
+    drawerToggle.focus();
+  } else if (!matches && document.activeElement === drawerToggle) {
+    sidebar.querySelector(':is(button, select, input):enabled').focus();
+  }
+});
 
 function setDrawerOpen(open) {
   appEl.classList.toggle('drawer-open', open);
   drawerToggle.setAttribute('aria-expanded', String(open));
   if (map) map.resize();
+  nudgePopupIntoView();
 }
 
 drawerToggle.addEventListener('click', () => {
@@ -702,7 +739,7 @@ function keepSelectedParcelInView() {
   if (!map.getBounds().contains([lng, lat])) map.panTo([lng, lat]);
 }
 
-document.getElementById('map-container').addEventListener('click', event => {
+mapContainer.addEventListener('click', event => {
   const button = event.target.closest('.popup-streetview-btn');
   if (!button || !selectedStreetViewParcel) return;
   streetViewTrigger = button;
@@ -725,18 +762,24 @@ function closeStreetView({ restoreFocus = true } = {}) {
   streetViewPanel.hidden = true;
   appEl.classList.remove('streetview-open');
   if (map) map.resize();
+  nudgePopupIntoView();
   if (!restoreFocus) return;
-  if (streetViewTrigger?.isConnected) streetViewTrigger.focus();
+  if (streetViewTrigger?.isConnected) streetViewTrigger.focus({ preventScroll:true });
   else document.getElementById('search-input').focus();
 }
 document.getElementById('streetview-close').addEventListener('click', () => closeStreetView());
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
-  if (!streetViewPanel.hidden) {
+  if (aboutModal.classList.contains('open')) {
+    closeAbout();
+  } else if (searchBox.contains(document.activeElement) && !searchResults.hidden) {
+    searchInput.focus();
+    hideSearchResults();
+  } else if (!streetViewPanel.hidden) {
     closeStreetView();
   } else if (drawerLayout.matches && appEl.classList.contains('drawer-open')) {
-    setDrawerOpen(false);
     drawerToggle.focus();
+    setDrawerOpen(false);
   }
 });
 
@@ -1263,15 +1306,47 @@ document.querySelectorAll('.view-tab').forEach(btn => {
 });
 
 // ── Search (Option B: flagged parcels only) ───────────────────
+const searchBox = document.getElementById('search-box');
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+let searchRevision = 0;
+
+function hideSearchResults() {
+  searchRevision++;
+  searchResults.hidden = true;
+}
+
+function fitSearchResults() {
+  if (searchResults.hidden) return;
+  const navigation = mapContainer.querySelector('.maplibregl-ctrl-bottom-left .maplibregl-ctrl');
+  const bottom = navigation?.getBoundingClientRect().top ?? mapContainer.getBoundingClientRect().bottom;
+  const room = bottom - searchResults.getBoundingClientRect().top - 8;
+  searchResults.style.maxHeight = `${Math.max(0, Math.min(420, room))}px`;
+}
+
+const mapLayoutObserver = new ResizeObserver(() => {
+  if (map) map.resize();
+  nudgePopupIntoView();
+  fitSearchResults();
+});
+mapLayoutObserver.observe(mapContainer);
+mapLayoutObserver.observe(mapToolbar);
+
 document.getElementById('search-btn').addEventListener('click', doSearch);
-document.getElementById('search-input').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+searchInput.addEventListener('input', hideSearchResults);
+searchBox.addEventListener('focusout', e => {
+  if (e.relatedTarget && !searchBox.contains(e.relatedTarget)) hideSearchResults();
+});
 
 async function doSearch() {
-  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const q = searchInput.value.trim().toLowerCase();
   if (!q) return;
-  const box = document.getElementById('search-results');
+  hideSearchResults();
+  const revision = searchRevision;
   try {
     const fc = await getFlaggedData();
+    if (revision !== searchRevision) return;
     const results = [];
     for (const f of fc.features) {
       const props = f.properties;
@@ -1285,41 +1360,41 @@ async function doSearch() {
         if (results.length >= 15) break;
       }
     }
-    box.innerHTML = '';
+    searchResults.replaceChildren();
     if (!results.length) {
       const empty = document.createElement('div');
       empty.className = 'sri';
       empty.innerHTML = '<div class="sri-meta">No flagged parcels match. Search covers the flagged subset only.</div>';
-      box.appendChild(empty);
-      box.style.display = 'block';
-      return;
+      searchResults.appendChild(empty);
     }
     results.forEach(pr => {
-      const div = document.createElement('div');
-      div.className = 'sri';
-      div.innerHTML = `
-        <div class="sri-parcel">${pr.parcel_number} <span style="color:var(--muted);font-weight:400;font-size:11px">${pr.address||''}</span></div>
-        <div class="sri-meta">${pr.qtile_tier||''} · Ward ${pr.geographic_ward||'N/A'} · ZIP ${pr.zip_code||'N/A'}</div>`;
-      div.addEventListener('click', () => {
-        box.style.display = 'none';
-        document.getElementById('search-input').value = pr.parcel_number;
-        if (popup) popup.remove();
+      const result = document.createElement('button');
+      result.type = 'button';
+      result.className = 'sri';
+      result.innerHTML = `
+        <span class="sri-parcel">${pr.parcel_number} <span style="color:var(--muted);font-weight:400;font-size:11px">${pr.address||''}</span></span>
+        <span class="sri-meta">${pr.qtile_tier||''} · Ward ${pr.geographic_ward||'N/A'} · ZIP ${pr.zip_code||'N/A'}</span>`;
+      result.addEventListener('click', () => {
+        searchInput.value = pr.parcel_number;
+        searchInput.focus({ preventScroll:true });
+        hideSearchResults();
         if (!map) return;
-        map.flyTo({ center: [pr.lng, pr.lat], zoom: 16 });
+        map.stop();
+        popup.remove();
         map.once('moveend', () => {
           showParcelPopup(pr, { lng: pr.lng, lat: pr.lat });
         });
+        map.flyTo({ center: [pr.lng, pr.lat], zoom: 16 });
       });
-      box.appendChild(div);
+      searchResults.appendChild(result);
     });
-    box.style.display = 'block';
+    searchResults.hidden = false;
+    fitSearchResults();
   } catch(e) { console.warn('Search failed:', e); }
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('#search-results') && !e.target.closest('#search-box')) {
-    document.getElementById('search-results').style.display = 'none';
-  }
+  if (!searchBox.contains(e.target)) hideSearchResults();
 });
 
 // ── Map mode badge ────────────────────────────────────────────
@@ -1505,14 +1580,34 @@ function renderWardChart(top10) {
 }
 
 // ── About modal ───────────────────────────────────────────────
-document.getElementById('about-btn').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.add('open');
+const aboutModal = document.getElementById('aboutModal');
+const aboutBtn = document.getElementById('about-btn');
+const aboutBackground = [document.getElementById('header'), appEl];
+
+function closeAbout() {
+  aboutModal.classList.remove('open');
+  aboutBackground.forEach(el => { el.inert = false; });
+  aboutBtn.focus();
+}
+
+aboutBtn.addEventListener('click', () => {
+  aboutModal.classList.add('open');
+  aboutBackground.forEach(el => { el.inert = true; });
+  document.getElementById('modal-close-btn').focus();
 });
-document.getElementById('modal-close-btn').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.remove('open');
-});
-document.getElementById('modal-close-btn2').addEventListener('click', () => {
-  document.getElementById('aboutModal').classList.remove('open');
+document.getElementById('modal-close-btn').addEventListener('click', closeAbout);
+document.getElementById('modal-close-btn2').addEventListener('click', closeAbout);
+aboutModal.addEventListener('keydown', event => {
+  if (event.key !== 'Tab') return;
+  const items = aboutModal.querySelectorAll('button, [tabindex="0"]');
+  const first = items[0], last = items[items.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 });
 </script>
 </body>
